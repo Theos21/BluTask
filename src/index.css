@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom accent (per-user) ── */
+:root {
+  --color-accent: #6366f1;
+  --radius: 0.5rem;
+
+  /* shadcn color tokens — light mode (mapped to our design palette) */
+  --background:        210 17% 98%;   /* #fafbfc */
+  --foreground:        222 47% 11%;   /* dark gray */
+  --card:              0 0% 100%;     /* white */
+  --card-foreground:   222 47% 11%;
+  --popover:           0 0% 100%;
+  --popover-foreground:222 47% 11%;
+  --primary:           239 84% 67%;   /* indigo (accent placeholder) */
+  --primary-foreground:0 0% 100%;
+  --secondary:         210 40% 96%;
+  --secondary-foreground:222 47% 11%;
+  --muted:             210 40% 96%;
+  --muted-foreground:  215 16% 47%;
+  --accent:            210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive:       0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border:            220 13% 91%;
+  --input:             220 13% 91%;
+  --ring:              239 84% 67%;
+
+  /* Sidebar — light */
+  --sidebar-background:        210 10% 97%;   /* #f5f6f8 */
+  --sidebar-foreground:        222 20% 30%;
+  --sidebar-primary:           239 84% 67%;
+  --sidebar-primary-foreground:0 0% 100%;
+  --sidebar-accent:            210 15% 94%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-border:            220 13% 91%;
+  --sidebar-ring:              239 84% 67%;
+}
+
+.dark {
+  /* shadcn color tokens — dark mode (mapped to our navy palette) */
+  --background:        220 28% 7%;    /* #0d1117 */
+  --foreground:        210 17% 95%;   /* near-white */
+  --card:              213 31% 11%;   /* #131b24 */
+  --card-foreground:   210 17% 95%;
+  --popover:           213 31% 11%;
+  --popover-foreground:210 17% 95%;
+  --primary:           239 84% 75%;
+  --primary-foreground:222 47% 11%;
+  --secondary:         213 25% 16%;
+  --secondary-foreground:210 17% 95%;
+  --muted:             213 25% 16%;
+  --muted-foreground:  215 13% 50%;
+  --accent:            213 25% 16%;
+  --accent-foreground: 210 17% 95%;
+  --destructive:       0 63% 31%;
+  --destructive-foreground: 210 17% 95%;
+  --border:            213 20% 16%;
+  --input:             213 20% 16%;
+  --ring:              239 84% 75%;
+
+  /* Sidebar — dark */
+  --sidebar-background:        217 43% 5%;    /* #080c14 */
+  --sidebar-foreground:        210 17% 75%;
+  --sidebar-primary:           239 84% 75%;
+  --sidebar-primary-foreground:220 28% 7%;
+  --sidebar-accent:            213 25% 13%;
+  --sidebar-accent-foreground: 210 17% 95%;
+  --sidebar-border:            213 20% 13%;
+  --sidebar-ring:              239 84% 75%;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    @apply bg-[#fafbfc] dark:bg-[#0d1117] text-gray-900 dark:text-gray-100;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-200 dark:bg-white/10 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-300 dark:bg-white/20; }
+}
+
+@layer components {
+  /* Legacy sidebar-item class (still used in a few spots) */
+  .sidebar-item {
+    @apply relative flex items-center pl-5 pr-3 py-2.5 text-sm rounded-md transition-colors duration-200 cursor-pointer select-none w-full;
+  }
+  .sidebar-item.active {
+    @apply text-gray-900 dark:text-gray-100 font-medium;
+  }
+  .sidebar-item:not(.active) {
+    @apply text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-[#131b24] rounded-xl;
+  }
+
+  /* Primary / ghost buttons */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all duration-150;
+    background-color: var(--color-accent, #6366f1);
+  }
+  .btn-primary:hover { filter: brightness(0.9); }
+  .btn-primary:disabled { opacity: 0.45; }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-150;
+  }
+
+  /* Form input */
+  .input-base {
+    @apply w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-white/10 focus:border-transparent transition-all;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/40 dark:bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in;
+  }
+  .modal-content {
+    @apply bg-white dark:bg-[#131b24] rounded-2xl shadow-2xl w-full max-w-lg animate-slide-up;
+  }
+
+  /* Pill / dot */
+  .color-pill   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+  .priority-dot { @apply w-2 h-2 rounded-full flex-shrink-0; }
+
+  /* Tiny section label */
+  .section-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-600;
+  }
+}
+
+/* Page fade-in — applied via key-triggered remount */
+.page-enter {
+  animation: pageFadeIn 150ms ease-out both;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
