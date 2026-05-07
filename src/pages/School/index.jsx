@@ -78,33 +78,33 @@ export default function School() {
   return (
     <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
-        <div className="flex items-center justify-between mb-5">
+      <div className="px-4 pt-4 pb-4 md:px-8 md:pt-8 md:pb-6 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
               <GraduationCap size={18} className="text-indigo-500" />
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">School</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-wrap">
             <button
               onClick={() => { setEditClass(null); setClassModalOpen(true) }}
               className="btn-ghost text-xs"
             >
               <Plus size={14} />
-              New class
+              <span className="hidden sm:inline">New class</span>
             </button>
             <button
               onClick={() => setImportModalOpen(true)}
               disabled={classes.length === 0}
-              className="btn-ghost text-xs flex items-center gap-1"
+              className="hidden md:inline-flex btn-ghost text-xs items-center gap-1"
             >
               <Sparkles size={13} />
               Quick import
             </button>
             <button
               onClick={() => { setStudyClass(null); setStudyAssignment(null); setStudyModeOpen(true) }}
-              className="btn-ghost text-xs flex items-center gap-1"
+              className="hidden md:inline-flex btn-ghost text-xs items-center gap-1"
             >
               <Timer size={13} />
               Study mode
@@ -115,13 +115,13 @@ export default function School() {
               disabled={classes.length === 0}
             >
               <Plus size={14} />
-              Add assignment
+              <span className="hidden sm:inline">Add assignment</span>
             </button>
           </div>
         </div>
 
         {/* View tabs */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
           <div className="flex gap-1">
             {VIEWS.map(({ id, label, icon: Icon }) => (
               <button
@@ -158,7 +158,7 @@ export default function School() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
         {classes.length === 0 ? (
           <EmptyState
             icon={GraduationCap}

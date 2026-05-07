@@ -224,10 +224,10 @@ export default function Tasks() {
     : []
 
   return (
-    <div className="max-w-[1200px] mx-auto w-full h-full flex overflow-hidden">
+    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col md:flex-row overflow-hidden">
 
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <div className="w-56 flex-shrink-0 border-r border-gray-100 dark:border-gray-800/60 flex flex-col overflow-hidden">
+      {/* ── Sidebar — hidden on mobile ───────────────────────────────────── */}
+      <div className="hidden md:flex w-56 flex-shrink-0 border-r border-gray-100 dark:border-gray-800/60 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto px-3 pt-4 pb-4">
 
           {/* Inbox — styled as a primary nav item */}
@@ -364,10 +364,53 @@ export default function Tasks() {
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        {/* Mobile nav strip — visible only below md */}
+        <div className="flex md:hidden items-center gap-2 px-4 py-2 overflow-x-auto border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0 scrollbar-none scroll-touch">
+          <button
+            onClick={() => setSelectedView({ type: 'inbox' })}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedView.type === 'inbox'
+                ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            <Inbox size={11} />
+            Inbox
+          </button>
+          {lists.map(list => (
+            <button
+              key={list.id}
+              onClick={() => setSelectedView({ type: 'list', id: list.id })}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedView.type === 'list' && selectedView.id === list.id
+                  ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
+              {list.name}
+            </button>
+          ))}
+          {tags.map(tag => (
+            <button
+              key={tag.id}
+              onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedView.type === 'tag' && selectedView.id === tag.id
+                  ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+              {tag.name}
+            </button>
+          ))}
+        </div>
 
         {/* Top bar */}
-        <div className="px-8 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0 flex items-center justify-between">
+        <div className="px-4 pt-4 pb-3 md:px-8 md:pt-6 md:pb-4 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center">
               <CheckSquare size={15} className="text-teal-500" />
@@ -379,7 +422,7 @@ export default function Tasks() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 pt-6 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6 md:px-8 md:pt-6 md:pb-8">
 
           {/* ── Inbox view ──────────────────────────────────────────────── */}
           {selectedView.type === 'inbox' && (() => {

@@ -59,7 +59,7 @@ function ShowCard({ show, onClick }) {
   if (show.poster_url) {
     return (
       <div
-        className="group relative rounded-2xl overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/25"
+        className="watch-card group relative rounded-2xl overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/25"
         style={{ width: CARD_W, height: CARD_H }}
         onClick={onClick}
       >
@@ -96,7 +96,7 @@ function ShowCard({ show, onClick }) {
 
   return (
     <div
-      className="group relative rounded-2xl overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/25"
+      className="watch-card group relative rounded-2xl overflow-hidden cursor-pointer flex-shrink-0 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/25"
       style={{ width: CARD_W, height: CARD_H }}
       onClick={onClick}
     >
@@ -195,7 +195,7 @@ function CompletedShowsGroup({ finished, dropped, onSelect, onAdd }) {
           {finished.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">Finished</p>
-              <div className="flex flex-wrap gap-5">
+              <div className="flex flex-wrap gap-3 md:gap-5">
                 {finished.map((show) => <ShowCard key={show.id} show={show} onClick={() => onSelect(show)} />)}
               </div>
             </div>
@@ -203,7 +203,7 @@ function CompletedShowsGroup({ finished, dropped, onSelect, onAdd }) {
           {dropped.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">Dropped</p>
-              <div className="flex flex-wrap gap-5">
+              <div className="flex flex-wrap gap-3 md:gap-5">
                 {dropped.map((show) => <ShowCard key={show.id} show={show} onClick={() => onSelect(show)} />)}
               </div>
             </div>
@@ -224,7 +224,7 @@ function WatchedMoviesGroup({ watched, onSelect }) {
         {open ? <ChevronUp size={13} className="text-gray-400" /> : <ChevronDown size={13} className="text-gray-400" />}
       </button>
       {open && (
-        <div className="flex flex-wrap gap-5">
+        <div className="flex flex-wrap gap-3 md:gap-5">
           {watched.map((show) => <ShowCard key={show.id} show={show} onClick={() => onSelect(show)} />)}
         </div>
       )}
@@ -515,9 +515,9 @@ export default function Watch() {
 
   return (
     <div className="h-full flex overflow-hidden max-w-[1200px] mx-auto w-full">
-      <div className="flex-1 overflow-y-auto px-8 py-8">
+      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-8">
 
-        <div className="flex items-center justify-between gap-3 mb-8">
+        <div className="flex items-center justify-between gap-3 mb-5 md:mb-8">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
               <Tv2 size={18} className="text-amber-500" />
@@ -566,7 +566,7 @@ export default function Watch() {
           {wantShows.length === 0 ? (
             <p className="text-sm italic text-gray-400 dark:text-gray-600">You have nothing here yet</p>
           ) : (
-            <div className="flex flex-wrap gap-5">
+            <div className="flex flex-wrap gap-3 md:gap-5">
               {wantShows.map((show) => <ShowCard key={show.id} show={show} onClick={() => toggleSelect(show)} />)}
             </div>
           )}
@@ -589,7 +589,7 @@ export default function Watch() {
           {wantMovies.length === 0 ? (
             <p className="text-sm italic text-gray-400 dark:text-gray-600">No movies on your list</p>
           ) : (
-            <div className="flex flex-wrap gap-5">
+            <div className="flex flex-wrap gap-3 md:gap-5">
               {wantMovies.map((show) => <ShowCard key={show.id} show={show} onClick={() => toggleSelect(show)} />)}
             </div>
           )}

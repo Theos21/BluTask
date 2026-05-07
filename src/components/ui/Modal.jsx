@@ -26,6 +26,10 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       onClick={(e) => { if (e.target === e.currentTarget && mouseDownOnOverlay.current) onClose() }}
     >
       <div className={`modal-content ${sizes[size]} max-h-[90vh] overflow-y-auto`}>
+        {/* Drag handle — only visible on mobile bottom sheet */}
+        <div className="md:hidden flex justify-center pt-3 -mb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+        </div>
         {title && (
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h2>

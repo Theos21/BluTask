@@ -254,7 +254,7 @@ export default function Calendar() {
 
   return (
     <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
-      <div className="px-8 pt-8 pb-5 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
+      <div className="px-4 pt-4 pb-3 md:px-8 md:pt-8 md:pb-5 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center">
@@ -279,10 +279,10 @@ export default function Calendar() {
                 </button>
               ))}
             </div>
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+            <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700" />
             <button
               onClick={() => setShowBuilderPanel((v) => !v)}
-              className={`btn-ghost text-xs flex items-center gap-1.5 ${showBuilderPanel ? 'text-rose-500' : ''}`}
+              className={`hidden md:flex btn-ghost text-xs items-center gap-1.5 ${showBuilderPanel ? 'text-rose-500' : ''}`}
             >
               <Settings2 size={13} />
               Routine Builder
@@ -350,20 +350,21 @@ export default function Calendar() {
       <div className="flex-1 overflow-hidden flex">
         {view === 'month' ? (
           <>
-            <div className="flex-1 flex flex-col overflow-hidden p-6">
+            <div className="flex-1 flex flex-col overflow-hidden p-2 md:p-6">
               <div className="grid grid-cols-7 mb-2 flex-shrink-0">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                {[['Sun','S'], ['Mon','M'], ['Tue','T'], ['Wed','W'], ['Thu','T'], ['Fri','F'], ['Sat','S']].map(([full, short]) => (
                   <div
-                    key={d}
+                    key={full}
                     className="text-center text-xs font-semibold text-gray-400 dark:text-gray-500 py-2"
                   >
-                    {d}
+                    <span className="hidden sm:block">{full}</span>
+                    <span className="sm:hidden">{short}</span>
                   </div>
                 ))}
               </div>
               <div
                 className="flex-1 grid grid-cols-7 gap-1"
-                style={{ gridTemplateRows: `repeat(${monthWeeks.length}, minmax(80px, 1fr))` }}
+                style={{ gridTemplateRows: `repeat(${monthWeeks.length}, minmax(52px, 1fr))` }}
               >
                 {monthWeeks.flat().map((day) => {
                   const { assignments: dayA, tasks: dayT } = getEventsForDay(day)
@@ -427,7 +428,7 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="w-72 flex-shrink-0 border-l border-gray-100 dark:border-gray-800/60 overflow-y-auto">
+            <div className="hidden md:flex flex-col w-72 flex-shrink-0 border-l border-gray-100 dark:border-gray-800/60 overflow-y-auto">
               <DayDetailPanel />
             </div>
           </>
