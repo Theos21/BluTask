@@ -26,9 +26,24 @@ export const useAuthStore = create((set, get) => ({
       .eq('id', userId)
       .single()
 
-    if (data) { set({ profile: data }); return }
+    if (data) {
+      // Auto-skip onboarding for existing users who already have data
+      if (!data.onboarding_complete) {
+        const { count } = await supabase
+          .from('tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+        if ((count ?? 0) > 0) {
+          await supabase.from('profiles').update({ onboarding_complete: true }).eq('id', userId)
+          set({ profile: { ...data, onboarding_complete: true } })
+          return
+        }
+      }
+      set({ profile: data })
+      return
+    }
 
-    // No row yet (user signed up before trigger existed) — create one
+    // No row yet (user signed up before trigger existed) - create one
     if (error?.code === 'PGRST116') {
       const { data: created } = await supabase
         .from('profiles')
@@ -39,17 +54,16 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  patchProfile: (updates) => {
+    set((s) => ({ profile: s.profile ? { ...s.profile, ...updates } : null }))
+  },
+
   updateProfile: async (updates) => {
-    const { user, profile } = get()
+    const { user } = get()
     const { data, error } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        full_name: profile?.full_name ?? null,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        ...updates,
-      })
+      .update(updates)
+      .eq('id', user.id)
       .select()
       .single()
     if (!error && data) set({ profile: data })
@@ -83,7 +97,7 @@ export const useAuthStore = create((set, get) => ({
     await supabase.from('routine_blocks').delete().eq('user_id', uid)
     await supabase.from('profiles').delete().eq('id', uid)
 
-    // Delete the auth user via RPC — ignore any error (deleting auth.users invalidates
+    // Delete the auth user via RPC - ignore any error (deleting auth.users invalidates
     // the JWT mid-request, so the response always looks like an error even when it worked)
     await supabase.rpc('delete_user').catch(() => {})
 

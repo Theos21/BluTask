@@ -7,7 +7,7 @@
   --color-accent: #6366f1;
   --radius: 0.5rem;
 
-  /* shadcn color tokens — light mode (mapped to our design palette) */
+  /* shadcn color tokens - light mode (mapped to our design palette) */
   --background:        210 17% 98%;   /* #fafbfc */
   --foreground:        222 47% 11%;   /* dark gray */
   --card:              0 0% 100%;     /* white */
@@ -28,7 +28,7 @@
   --input:             220 13% 91%;
   --ring:              239 84% 67%;
 
-  /* Sidebar — light */
+  /* Sidebar - light */
   --sidebar-background:        210 10% 97%;   /* #f5f6f8 */
   --sidebar-foreground:        222 20% 30%;
   --sidebar-primary:           239 84% 67%;
@@ -40,7 +40,9 @@
 }
 
 .dark {
-  /* shadcn color tokens — dark mode (mapped to our navy palette) */
+  color-scheme: dark; /* tells the browser to render native controls (select, scrollbar, etc.) in dark mode */
+
+  /* shadcn color tokens - dark mode (mapped to our navy palette) */
   --background:        220 28% 7%;    /* #0d1117 */
   --foreground:        210 17% 95%;   /* near-white */
   --card:              213 31% 11%;   /* #131b24 */
@@ -61,7 +63,7 @@
   --input:             213 20% 16%;
   --ring:              239 84% 75%;
 
-  /* Sidebar — dark */
+  /* Sidebar - dark */
   --sidebar-background:        217 43% 5%;    /* #080c14 */
   --sidebar-foreground:        210 17% 75%;
   --sidebar-primary:           239 84% 75%;
@@ -125,7 +127,13 @@
 
   /* Form input */
   .input-base {
-    @apply w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-white/10 focus:border-transparent transition-all;
+    @apply w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#131b24] border border-gray-200 dark:border-white/[0.08] text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-white/10 focus:border-transparent transition-all;
+  }
+  /* Explicit option background for Chrome/Windows which ignores color-scheme on the popup */
+  .dark .input-base option,
+  .dark select option {
+    background-color: #131b24;
+    color: #e8eaf0;
   }
 
   /* Modal */
@@ -146,7 +154,7 @@
   }
 }
 
-/* Page fade-in — applied via key-triggered remount */
+/* Page fade-in - applied via key-triggered remount */
 .page-enter {
   animation: pageFadeIn 150ms ease-out both;
 }

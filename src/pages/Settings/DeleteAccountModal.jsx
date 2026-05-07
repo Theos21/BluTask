@@ -27,7 +27,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
         <div className="flex items-start gap-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20">
           <AlertTriangle size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
-            This will permanently delete your account and all data — classes, assignments, tasks, lists, and routine blocks. <strong>This cannot be undone.</strong>
+            This will permanently delete your account and all data: classes, assignments, tasks, lists, and routine blocks. <strong>This cannot be undone.</strong>
           </p>
         </div>
 

@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
-import { Camera, Check, Loader2 } from 'lucide-react'
+import { Camera, Check, Loader2, LogOut } from 'lucide-react'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { supabase } from '../../lib/supabase'
 import Avatar from '../../components/ui/Avatar'
 import { AVATAR_COLORS } from '../../lib/constants'
 import { showToast } from '../../lib/toast'
+import ChangePasswordModal from './ChangePasswordModal'
 
 function SaveButton({ saving, saved, onClick, label = 'Save' }) {
   return (
@@ -20,7 +21,7 @@ function SaveButton({ saving, saved, onClick, label = 'Save' }) {
 }
 
 export default function AccountSection() {
-  const { user, profile, updateProfile, updateEmail, updatePassword } = useAuthStore()
+  const { user, profile, updateProfile, updateEmail, signOut } = useAuthStore()
   const fileRef = useRef(null)
 
   // Full name
@@ -39,12 +40,8 @@ export default function AccountSection() {
   const [emailMsg, setEmailMsg] = useState('')
   const [emailSaving, setEmailSaving] = useState(false)
 
-  // Password
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordMsg, setPasswordMsg] = useState('')
-  const [passwordSaving, setPasswordSaving] = useState(false)
+  // Password modal
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
 
   // Avatar
   const [avatarSaving, setAvatarSaving] = useState(false)
@@ -81,23 +78,6 @@ export default function AccountSection() {
       setEmailMsg('Confirmation sent to both addresses. Check your inbox.')
       setNewEmail('')
       setShowEmailForm(false)
-    }
-  }
-
-  async function changePassword(e) {
-    e.preventDefault()
-    if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match.'); return }
-    if (newPassword.length < 6) { setPasswordMsg('Password must be at least 6 characters.'); return }
-    setPasswordSaving(true)
-    setPasswordMsg('')
-    const { error } = await updatePassword(newPassword)
-    setPasswordSaving(false)
-    if (error) setPasswordMsg(error.message)
-    else {
-      setPasswordMsg('Password updated successfully.')
-      setNewPassword('')
-      setConfirmPassword('')
-      setShowPasswordForm(false)
     }
   }
 
@@ -256,46 +236,23 @@ export default function AccountSection() {
       {/* Password */}
       <div>
         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Password</label>
-        {!showPasswordForm ? (
-          <button onClick={() => { setShowPasswordForm(true); setPasswordMsg('') }} className="btn-ghost text-xs">
-            Change password
-          </button>
-        ) : (
-          <form onSubmit={changePassword} className="space-y-2">
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New password"
-              required
-              minLength={6}
-              autoFocus
-              className="input-base"
-            />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              required
-              className="input-base"
-            />
-            {passwordMsg && (
-              <p className={`text-xs px-3 py-2 rounded-lg ${
-                passwordMsg.includes('success')
-                  ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20'
-                  : 'text-rose-500 bg-rose-50 dark:bg-rose-900/20'
-              }`}>{passwordMsg}</p>
-            )}
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setShowPasswordForm(false)} className="btn-ghost text-xs">Cancel</button>
-              <button type="submit" disabled={passwordSaving} className="btn-primary text-xs disabled:opacity-50">
-                {passwordSaving ? 'Updating…' : 'Update password'}
-              </button>
-            </div>
-          </form>
-        )}
+        <button onClick={() => setPasswordModalOpen(true)} className="btn-ghost text-xs">
+          Change password
+        </button>
       </div>
+
+      {/* Sign out */}
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+        <button
+          onClick={() => signOut()}
+          className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+        >
+          <LogOut size={15} />
+          Sign out
+        </button>
+      </div>
+
+      <ChangePasswordModal isOpen={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} />
     </div>
   )
 }

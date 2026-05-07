@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 export const useTaskStore = create((set) => ({
   lists: [],
   tasks: [],
+  headers: [],
   checklistItems: {},
 
   fetchLists: async (userId) => {
@@ -11,7 +12,7 @@ export const useTaskStore = create((set) => ({
       .from('lists')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true })
+      .order('position', { ascending: true })
     if (!error) set({ lists: data || [] })
   },
 
@@ -20,8 +21,18 @@ export const useTaskStore = create((set) => ({
       .from('tasks')
       .select('*')
       .eq('user_id', userId)
+      .order('position', { ascending: true })
       .order('created_at', { ascending: false })
     if (!error) set({ tasks: data || [] })
+  },
+
+  fetchHeaders: async (userId) => {
+    const { data, error } = await supabase
+      .from('headers')
+      .select('*')
+      .eq('user_id', userId)
+      .order('position', { ascending: true })
+    if (!error) set({ headers: data || [] })
   },
 
   fetchChecklistItems: async (taskId) => {
@@ -62,6 +73,39 @@ export const useTaskStore = create((set) => ({
       set((s) => ({
         lists: s.lists.filter((l) => l.id !== id),
         tasks: s.tasks.filter((t) => t.list_id !== id),
+        headers: s.headers.filter((h) => h.list_id !== id),
+      }))
+    return { error }
+  },
+
+  addHeader: async (headerData) => {
+    const { data, error } = await supabase
+      .from('headers')
+      .insert([headerData])
+      .select()
+      .single()
+    if (!error) set((s) => ({ headers: [...s.headers, data] }))
+    return { data, error }
+  },
+
+  updateHeader: async (id, updates) => {
+    const { data, error } = await supabase
+      .from('headers')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (!error)
+      set((s) => ({ headers: s.headers.map((h) => (h.id === id ? data : h)) }))
+    return { data, error }
+  },
+
+  deleteHeader: async (id) => {
+    const { error } = await supabase.from('headers').delete().eq('id', id)
+    if (!error)
+      set((s) => ({
+        headers: s.headers.filter((h) => h.id !== id),
+        tasks: s.tasks.map((t) => (t.header_id === id ? { ...t, header_id: null } : t)),
       }))
     return { error }
   },
@@ -84,9 +128,7 @@ export const useTaskStore = create((set) => ({
       .select()
       .single()
     if (!error)
-      set((s) => ({
-        tasks: s.tasks.map((t) => (t.id === id ? data : t)),
-      }))
+      set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? data : t)) }))
     return { data, error }
   },
 
@@ -109,8 +151,17 @@ export const useTaskStore = create((set) => ({
 
   deleteTask: async (id) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
-    if (!error)
-      set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
+    if (!error) set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
+    return { error }
+  },
+
+  deleteCompletedTasks: async (userId) => {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('user_id', userId)
+      .eq('completed', true)
+    if (!error) set((s) => ({ tasks: s.tasks.filter((t) => !t.completed) }))
     return { error }
   },
 

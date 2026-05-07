@@ -1,7 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+  const mouseDownOnOverlay = useRef(false)
+
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     if (isOpen) document.addEventListener('keydown', handler)
@@ -18,7 +20,11 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   }
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-overlay"
+      onMouseDown={(e) => { mouseDownOnOverlay.current = e.target === e.currentTarget }}
+      onClick={(e) => { if (e.target === e.currentTarget && mouseDownOnOverlay.current) onClose() }}
+    >
       <div className={`modal-content ${sizes[size]} max-h-[90vh] overflow-y-auto`}>
         {title && (
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">

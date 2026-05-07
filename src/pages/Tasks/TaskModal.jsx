@@ -1,33 +1,49 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Check } from 'lucide-react'
+import { Plus, Trash2, Check, Tag, X, Eye, EyeOff, Bell } from 'lucide-react'
 import DateTimePicker from '../../components/date-time-picker'
 import { showToast } from '../../lib/toast'
 import Modal from '../../components/ui/Modal'
 import { useTaskStore } from '../../stores/useTaskStore'
+import { useTagStore } from '../../stores/useTagStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { supabase } from '../../lib/supabase'
 import { PRIORITIES, REPEAT_RULES } from '../../lib/constants'
+import { renderMarkdown } from '../../lib/markdown'
 
-export default function TaskModal({ isOpen, onClose, editTask = null, defaultListId = null }) {
+const TAG_COLORS = ['#6b7280', '#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
+
+export default function TaskModal({
+  isOpen,
+  onClose,
+  editTask = null,
+  defaultListId = null,
+  defaultHeaderId = null,
+}) {
   const { user } = useAuthStore()
   const { lists, addTask, updateTask, addChecklistItem, toggleChecklistItem, deleteChecklistItem, checklistItems, fetchChecklistItems } = useTaskStore()
+  const { tags, taskTags, addTag, addTagToTask, removeTagFromTask } = useTagStore()
 
   const INBOX = { id: 'inbox', name: 'Inbox', color: '#6b7280' }
   const allLists = [INBOX, ...lists]
 
-  const init = editTask || {}
-  const [title, setTitle] = useState(init.title || '')
-  const [listId, setListId] = useState(init.list_id || defaultListId || 'inbox')
-  const [dueDate, setDueDate] = useState(init.due_date || null)
-  const [priority, setPriority] = useState(init.priority || 'normal')
-  const [repeatRule, setRepeatRule] = useState(init.repeat_rule || '')
-  const [notes, setNotes] = useState(init.notes || '')
+  const [title, setTitle] = useState('')
+  const [listId, setListId] = useState('inbox')
+  const [dueDate, setDueDate] = useState(null)
+  const [priority, setPriority] = useState('normal')
+  const [repeatRule, setRepeatRule] = useState('')
+  const [notes, setNotes] = useState('')
+  const [notesPreview, setNotesPreview] = useState(false)
+  const [reminderAt, setReminderAt] = useState(null)
   const [checkItems, setCheckItems] = useState([])
   const [newCheckItem, setNewCheckItem] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Load existing checklist when editing
+  // Tags
+  const [selectedTagIds, setSelectedTagIds] = useState([])
+  const [showNewTag, setShowNewTag] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[1])
+
   useEffect(() => {
     if (!isOpen) return
     if (editTask) {
@@ -37,6 +53,8 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
       setPriority(editTask.priority || 'normal')
       setRepeatRule(editTask.repeat_rule || '')
       setNotes(editTask.notes || '')
+      setReminderAt(editTask.reminder_at || null)
+      setSelectedTagIds(taskTags[editTask.id] ? [...taskTags[editTask.id]] : [])
       fetchChecklistItems(editTask.id).then(() => {
         const items = checklistItems[editTask.id] || []
         setCheckItems(items.map((i) => ({ id: i.id, title: i.title, completed: i.completed, persisted: true })))
@@ -44,15 +62,36 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
     } else {
       setTitle('')
       setListId(defaultListId || 'inbox')
-      setDueDate('')
+      setDueDate(null)
       setPriority('normal')
       setRepeatRule('')
       setNotes('')
+      setReminderAt(null)
       setCheckItems([])
+      setSelectedTagIds([])
     }
     setNewCheckItem('')
+    setShowNewTag(false)
+    setNewTagName('')
+    setNotesPreview(false)
     setError('')
   }, [isOpen, editTask?.id])
+
+  function toggleTag(tagId) {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    )
+  }
+
+  async function handleCreateTag() {
+    if (!newTagName.trim()) return
+    const { data, error: err } = await addTag({ user_id: user.id, name: newTagName.trim(), color: newTagColor })
+    if (!err && data) {
+      setSelectedTagIds((prev) => [...prev, data.id])
+      setNewTagName('')
+      setShowNewTag(false)
+    }
+  }
 
   function addLocalItem() {
     if (!newCheckItem.trim()) return
@@ -78,6 +117,16 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
     )
   }
 
+  async function syncTags(taskId) {
+    const existing = taskTags[taskId] || []
+    const toAdd = selectedTagIds.filter((id) => !existing.includes(id))
+    const toRemove = existing.filter((id) => !selectedTagIds.includes(id))
+    await Promise.all([
+      ...toAdd.map((tagId) => addTagToTask(taskId, tagId, user.id)),
+      ...toRemove.map((tagId) => removeTagFromTask(taskId, tagId)),
+    ])
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!title.trim()) return
@@ -87,18 +136,19 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
     const payload = {
       title: title.trim(),
       list_id: listId === 'inbox' ? null : listId,
+      header_id: editTask?.header_id ?? defaultHeaderId ?? null,
       due_date: dueDate || null,
       priority,
       repeat_rule: repeatRule || null,
       notes: notes.trim(),
+      reminder_at: reminderAt || null,
       completed: editTask?.completed ?? false,
     }
 
     if (editTask) {
       const { error: err } = await updateTask(editTask.id, payload)
       if (err) { setError(err.message); setSaving(false); return }
-
-      // Save any new (un-persisted) checklist items
+      await syncTags(editTask.id)
       const newItems = checkItems.filter((i) => !i.persisted)
       for (let i = 0; i < newItems.length; i++) {
         await addChecklistItem({
@@ -111,16 +161,10 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
     } else {
       const { data, error: err } = await addTask({ ...payload, user_id: user.id })
       if (err) { setError(err.message); setSaving(false); return }
-
-      // Save checklist items for new task
-      if (data && checkItems.length > 0) {
+      if (data) {
+        await syncTags(data.id)
         for (let i = 0; i < checkItems.length; i++) {
-          await addChecklistItem({
-            task_id: data.id,
-            title: checkItems[i].title,
-            completed: false,
-            position: i,
-          })
+          await addChecklistItem({ task_id: data.id, title: checkItems[i].title, completed: false, position: i })
         }
       }
     }
@@ -131,6 +175,7 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
   }
 
   const completedCount = checkItems.filter((i) => i.completed).length
+  const allChecksDone = checkItems.length > 0 && completedCount === checkItems.length && !(editTask?.completed)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editTask ? 'Edit task' : 'New task'}>
@@ -182,14 +227,120 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Notes</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Optional notes…"
-            rows={2}
-            className="input-base resize-none"
-          />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Notes</label>
+            {notes && (
+              <button
+                type="button"
+                onClick={() => setNotesPreview(v => !v)}
+                className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                {notesPreview ? <EyeOff size={11} /> : <Eye size={11} />}
+                {notesPreview ? 'Edit' : 'Preview'}
+              </button>
+            )}
+          </div>
+          {notesPreview ? (
+            <div
+              className="min-h-[56px] text-xs text-gray-700 dark:text-gray-300 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(notes) }}
+            />
+          ) : (
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional notes… (supports **bold**, *italic*, `code`, - lists)"
+              rows={2}
+              className="input-base resize-none"
+            />
+          )}
+        </div>
+
+        {/* Reminder */}
+        <div>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+            <Bell size={11} />
+            Reminder
+          </label>
+          <DateTimePicker value={reminderAt} onChange={setReminderAt} />
+          {reminderAt && (
+            <button
+              type="button"
+              onClick={() => setReminderAt(null)}
+              className="mt-1 text-[11px] text-gray-400 hover:text-rose-500 transition-colors"
+            >
+              Clear reminder
+            </button>
+          )}
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+            <Tag size={11} />
+            Tags
+          </label>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map((tag) => {
+                const selected = selectedTagIds.includes(tag.id)
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => toggleTag(tag.id)}
+                    className={`text-[11px] px-2.5 py-1 rounded-full font-medium border transition-all ${
+                      selected
+                        ? 'border-transparent'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                    style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
+                  >
+                    {selected && <span className="mr-1">✓</span>}
+                    {tag.name}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {showNewTag ? (
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+              <input
+                autoFocus
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateTag() } if (e.key === 'Escape') setShowNewTag(false) }}
+                placeholder="Tag name…"
+                className="flex-1 text-xs bg-transparent outline-none text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
+              />
+              <div className="flex gap-1">
+                {TAG_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setNewTagColor(c)}
+                    className={`w-4 h-4 rounded-full transition-all ${newTagColor === c ? 'ring-2 ring-offset-1 ring-gray-400 dark:ring-offset-gray-800 scale-110' : 'hover:scale-105'}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <button type="button" onClick={handleCreateTag} className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700">Add</button>
+              <button type="button" onClick={() => setShowNewTag(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowNewTag(true)}
+              className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <Plus size={12} />
+              New tag
+            </button>
+          )}
         </div>
 
         {/* Checklist */}
@@ -213,16 +364,12 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
                     type="button"
                     onClick={() => toggleItem(i)}
                     className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
-                      item.completed
-                        ? 'bg-teal-500 border-teal-500'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-teal-400'
+                      item.completed ? 'bg-teal-500 border-teal-500' : 'border-gray-300 dark:border-gray-600 hover:border-teal-400'
                     }`}
                   >
                     {item.completed && <Check size={9} className="text-white" strokeWidth={3} />}
                   </button>
-                  <span className={`flex-1 text-xs ${
-                    item.completed ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300'
-                  }`}>
+                  <span className={`flex-1 text-xs ${item.completed ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
                     {item.title}
                   </span>
                   <button
@@ -250,6 +397,28 @@ export default function TaskModal({ isOpen, onClose, editTask = null, defaultLis
             </button>
           </div>
         </div>
+
+        {/* All-done prompt */}
+        {allChecksDone && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800">
+            <Check size={14} className="text-teal-500 flex-shrink-0" />
+            <p className="flex-1 text-xs text-teal-700 dark:text-teal-300">All checklist items done! Mark task complete?</p>
+            <button
+              type="button"
+              onClick={async () => {
+                if (editTask) {
+                  const { updateTask } = useTaskStore.getState()
+                  await updateTask(editTask.id, { completed: true })
+                  showToast({ message: 'Task completed', variant: 'success' })
+                  onClose()
+                }
+              }}
+              className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors flex-shrink-0"
+            >
+              Complete
+            </button>
+          </div>
+        )}
 
         {error && <p className="text-xs text-rose-500">{error}</p>}
         <div className="flex gap-2 pt-1">

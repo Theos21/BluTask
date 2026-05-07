@@ -84,7 +84,7 @@ export default function DayStrip({ routineBlocks, tasks, assignments, classes })
               />
             ))}
 
-            {/* Current time — red line */}
+            {/* Current time - red line */}
             {currentY >= 0 && currentY <= STRIP_HEIGHT && (
               <div
                 className="absolute inset-x-0 z-20 flex items-center pointer-events-none"

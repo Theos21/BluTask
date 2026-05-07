@@ -12,8 +12,43 @@ export const CLASS_COLORS = [
 ]
 
 export const ASSIGNMENT_TYPES = [
-  'homework', 'quiz', 'test', 'project', 'essay', 'lab', 'reading'
+  { value: 'homework',     label: 'Homework',     category: 'general' },
+  { value: 'assignment',   label: 'Assignment',   category: 'general' },
+  { value: 'essay',        label: 'Essay',        category: 'writing' },
+  { value: 'lab_report',   label: 'Lab Report',   category: 'lab' },
+  { value: 'project',      label: 'Project',      category: 'longterm' },
+  { value: 'reading',      label: 'Reading',      category: 'longterm' },
+  { value: 'quiz',         label: 'Quiz',         category: 'assessment' },
+  { value: 'test',         label: 'Test',         category: 'assessment' },
+  { value: 'presentation', label: 'Presentation', category: 'writing' },
+  { value: 'worksheet',    label: 'Worksheet',    category: 'general' },
+  { value: 'problem_set',  label: 'Problem Set',  category: 'general' },
+  { value: 'classwork',    label: 'Classwork',    category: 'general' },
+  { value: 'research',     label: 'Research',     category: 'writing' },
 ]
+
+export const TYPE_CATEGORIES = [
+  { id: 'all',        label: 'All' },
+  { id: 'assessment', label: 'Assessments' },
+  { id: 'writing',    label: 'Writing' },
+  { id: 'lab',        label: 'Lab' },
+  { id: 'general',    label: 'General' },
+  { id: 'longterm',   label: 'Long term' },
+]
+
+export const TYPE_PILL_STYLES = {
+  assessment: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
+  writing:    'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+  lab:        'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
+  general:    'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
+  longterm:   'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+}
+
+export function getTypeByValue(value) {
+  // Graceful fallback: handle legacy values (lab → lab_report, etc.)
+  return ASSIGNMENT_TYPES.find((t) => t.value === value)
+    || ASSIGNMENT_TYPES.find((t) => t.value === 'homework')
+}
 
 export const ASSIGNMENT_STATUSES = [
   { value: 'todo', label: 'To Do' },

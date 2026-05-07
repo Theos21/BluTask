@@ -1,5 +1,6 @@
-import { Bell, BellOff } from 'lucide-react'
+import { Bell, BellOff, Mail } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 
 const ADVANCE_OPTIONS = [
   { value: '1hour', label: '1 hour before' },
@@ -9,6 +10,8 @@ const ADVANCE_OPTIONS = [
 
 export default function NotificationsSection() {
   const { notificationsEnabled, setNotificationsEnabled, reminderAdvance, setReminderAdvance } = useAppStore()
+  const { profile, updateProfile } = useAuthStore()
+  const weeklyDigest = profile?.weekly_digest ?? false
 
   async function toggle() {
     if (!notificationsEnabled) {
@@ -81,6 +84,27 @@ export default function NotificationsSection() {
           </p>
         </div>
       )}
+
+      {/* Weekly digest */}
+      <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <Mail size={16} className={weeklyDigest ? 'text-[color:var(--color-accent)]' : 'text-gray-400 dark:text-gray-500'} />
+          <div>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Weekly email digest</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">A summary of your week every Monday morning</p>
+          </div>
+        </div>
+        <button
+          onClick={() => updateProfile({ weekly_digest: !weeklyDigest })}
+          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+            weeklyDigest ? 'bg-[color:var(--color-accent)]' : 'bg-gray-200 dark:bg-gray-700'
+          }`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+            weeklyDigest ? 'translate-x-5' : 'translate-x-0'
+          }`} />
+        </button>
+      </div>
     </div>
   )
 }

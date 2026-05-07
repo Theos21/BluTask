@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react'
-import { Plus, GraduationCap, BookOpen, Calendar, FlaskConical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Plus, GraduationCap, BookOpen, Calendar, FlaskConical, MoreHorizontal, Pencil, Trash2, Sparkles, Timer } from 'lucide-react'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { getColorByValue } from '../../lib/constants'
+import { getColorByValue, TYPE_CATEGORIES, getTypeByValue } from '../../lib/constants'
 import EmptyState from '../../components/ui/EmptyState'
 import ClassModal from './ClassModal'
 import AssignmentModal from './AssignmentModal'
 import AssignmentRow from './AssignmentRow'
+import SmartImportModal from './SmartImportModal'
+import StudyMode from '../../components/StudyMode'
 
 const VIEWS = [
   { id: 'byclass', label: 'By Class', icon: BookOpen },
   { id: 'bydate', label: 'By Due Date', icon: Calendar },
-  { id: 'tests', label: 'Upcoming Tests', icon: FlaskConical },
+  { id: 'assessments', label: 'Upcoming Assessments', icon: FlaskConical },
 ]
 
 export default function School() {
@@ -24,6 +27,13 @@ export default function School() {
   const [editAssignment, setEditAssignment] = useState(null)
   const [defaultClassId, setDefaultClassId] = useState(null)
   const [classMenuOpen, setClassMenuOpen] = useState(null)
+  const [classMenuPos, setClassMenuPos] = useState(null)
+  const classMenuContentRef = useRef(null)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [studyModeOpen, setStudyModeOpen] = useState(false)
+  const [studyClass, setStudyClass] = useState(null)
+  const [studyAssignment, setStudyAssignment] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -31,6 +41,15 @@ export default function School() {
       fetchAssignments(user.id)
     }
   }, [user])
+
+  useEffect(() => {
+    if (!classMenuOpen) return
+    function handle(e) {
+      if (!classMenuContentRef.current?.contains(e.target)) setClassMenuOpen(null)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [classMenuOpen])
 
   function openNewAssignment(classId = null) {
     setEditAssignment(null)
@@ -43,16 +62,21 @@ export default function School() {
     setAssignmentModalOpen(true)
   }
 
-  const sortedAssignments = [...assignments].sort(
-    (a, b) => new Date(a.due_date || '9999') - new Date(b.due_date || '9999')
-  )
+  const sortedAssignments = [...assignments]
+    .filter((a) => !a.completed)
+    .sort((a, b) => new Date(a.due_date || '9999') - new Date(b.due_date || '9999'))
 
-  const testAssignments = sortedAssignments.filter((a) =>
+  const assessmentAssignments = sortedAssignments.filter((a) =>
     ['quiz', 'test'].includes(a.type) && a.status !== 'graded'
   )
 
+  function applyTypeFilter(list) {
+    if (typeFilter === 'all') return list
+    return list.filter((a) => getTypeByValue(a.type)?.category === typeFilter)
+  }
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
       {/* Header */}
       <div className="px-8 pt-8 pb-6 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
         <div className="flex items-center justify-between mb-5">
@@ -71,6 +95,21 @@ export default function School() {
               New class
             </button>
             <button
+              onClick={() => setImportModalOpen(true)}
+              disabled={classes.length === 0}
+              className="btn-ghost text-xs flex items-center gap-1"
+            >
+              <Sparkles size={13} />
+              Quick import
+            </button>
+            <button
+              onClick={() => { setStudyClass(null); setStudyAssignment(null); setStudyModeOpen(true) }}
+              className="btn-ghost text-xs flex items-center gap-1"
+            >
+              <Timer size={13} />
+              Study mode
+            </button>
+            <button
               onClick={() => openNewAssignment()}
               className="btn-primary text-xs"
               disabled={classes.length === 0}
@@ -82,21 +121,39 @@ export default function School() {
         </div>
 
         {/* View tabs */}
-        <div className="flex gap-1">
-          {VIEWS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setView(id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                view === id
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <Icon size={13} />
-              {label}
-            </button>
-          ))}
+        <div className="flex items-center gap-4">
+          <div className="flex gap-1">
+            {VIEWS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setView(id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  view === id
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Icon size={13} />
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+          <div className="flex gap-1">
+            {TYPE_CATEGORIES.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setTypeFilter(id)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  typeFilter === id
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -120,7 +177,7 @@ export default function School() {
               <div className="space-y-6">
                 {classes.map((cls) => {
                   const colorObj = getColorByValue(cls.color)
-                  const clsAssignments = sortedAssignments.filter((a) => a.class_id === cls.id)
+                  const clsAssignments = applyTypeFilter(sortedAssignments.filter((a) => a.class_id === cls.id))
                   return (
                     <div key={cls.id} className="card overflow-hidden">
                       {/* Class header */}
@@ -154,28 +211,41 @@ export default function School() {
                             <Plus size={13} />
                             Add
                           </button>
-                          <div className="relative">
+                          <div>
                             <button
-                              onClick={() => setClassMenuOpen(classMenuOpen === cls.id ? null : cls.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (classMenuOpen === cls.id) { setClassMenuOpen(null); return }
+                                const rect = e.currentTarget.getBoundingClientRect()
+                                const menuH = 72
+                                const top = rect.bottom + 4 + menuH > window.innerHeight ? rect.top - menuH - 4 : rect.bottom + 4
+                                setClassMenuPos({ top, right: window.innerWidth - rect.right })
+                                setClassMenuOpen(cls.id)
+                              }}
                               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                             >
                               <MoreHorizontal size={14} />
                             </button>
-                            {classMenuOpen === cls.id && (
-                              <div className="absolute right-0 top-8 z-10 w-32 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg py-1 animate-fade-in">
+                            {classMenuOpen === cls.id && classMenuPos && createPortal(
+                              <div
+                                ref={classMenuContentRef}
+                                style={{ position: 'fixed', top: classMenuPos.top, right: classMenuPos.right, zIndex: 9999 }}
+                                className="w-32 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl py-1"
+                              >
                                 <button
-                                  onClick={() => { setEditClass(cls); setClassModalOpen(true); setClassMenuOpen(null) }}
+                                  onClick={(e) => { e.stopPropagation(); setEditClass(cls); setClassModalOpen(true); setClassMenuOpen(null) }}
                                   className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2"
                                 >
                                   <Pencil size={12} /> Edit
                                 </button>
                                 <button
-                                  onClick={async () => { await deleteClass(cls.id); setClassMenuOpen(null) }}
+                                  onClick={async (e) => { e.stopPropagation(); await deleteClass(cls.id); setClassMenuOpen(null) }}
                                   className="w-full text-left px-3 py-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-2"
                                 >
                                   <Trash2 size={12} /> Delete
                                 </button>
-                              </div>
+                              </div>,
+                              document.body
                             )}
                           </div>
                         </div>
@@ -194,6 +264,7 @@ export default function School() {
                               assignment={a}
                               classData={cls}
                               onEdit={openEditAssignment}
+                              showClassPill={false}
                             />
                           ))}
                         </div>
@@ -206,13 +277,13 @@ export default function School() {
 
             {view === 'bydate' && (
               <div className="card overflow-hidden">
-                {sortedAssignments.length === 0 ? (
+                {applyTypeFilter(sortedAssignments).length === 0 ? (
                   <div className="px-4 py-12 text-center">
                     <p className="text-sm text-gray-400">No assignments yet</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                    {sortedAssignments.map((a) => {
+                    {applyTypeFilter(sortedAssignments).map((a) => {
                       const cls = classes.find((c) => c.id === a.class_id)
                       return (
                         <AssignmentRow key={a.id} assignment={a} classData={cls} onEdit={openEditAssignment} />
@@ -223,17 +294,17 @@ export default function School() {
               </div>
             )}
 
-            {view === 'tests' && (
+            {view === 'assessments' && (
               <div className="card overflow-hidden">
-                {testAssignments.length === 0 ? (
+                {applyTypeFilter(assessmentAssignments).length === 0 ? (
                   <EmptyState
                     icon={FlaskConical}
-                    title="No upcoming tests or quizzes"
-                    description="Tests and quizzes will appear here."
+                    title="No upcoming assessments"
+                    description="Quizzes and tests will appear here."
                   />
                 ) : (
                   <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                    {testAssignments.map((a) => {
+                    {applyTypeFilter(assessmentAssignments).map((a) => {
                       const cls = classes.find((c) => c.id === a.class_id)
                       return (
                         <AssignmentRow key={a.id} assignment={a} classData={cls} onEdit={openEditAssignment} />
@@ -258,6 +329,17 @@ export default function School() {
         editAssignment={editAssignment}
         defaultClassId={defaultClassId}
       />
+    <SmartImportModal
+      isOpen={importModalOpen}
+      onClose={() => setImportModalOpen(false)}
+    />
+    {studyModeOpen && (
+      <StudyMode
+        onClose={() => setStudyModeOpen(false)}
+        currentClass={studyClass}
+        currentAssignment={studyAssignment}
+      />
+    )}
     </div>
   )
 }

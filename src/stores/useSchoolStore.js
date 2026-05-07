@@ -87,4 +87,46 @@ export const useSchoolStore = create((set, get) => ({
       set((s) => ({ assignments: s.assignments.filter((a) => a.id !== id) }))
     return { error }
   },
+
+  // DB call only - does NOT touch local state. Caller decides when to commit to store.
+  completeAssignmentInDB: async (id) => {
+    console.log('[completeAssignment] firing DB update for id:', id)
+    const updates = {
+      completed: true,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    const { data, error } = await supabase
+      .from('assignments')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    console.log('[completeAssignment] DB result - error:', error, 'data:', data)
+    return { data, error }
+  },
+
+  // Store update only - call after animation + DB both confirm success.
+  markAssignmentCompleted: (id, data) => {
+    set((s) => ({
+      assignments: s.assignments.map((a) => (a.id === id ? { ...a, ...data } : a)),
+    }))
+  },
+
+  uncompleteAssignment: async (id) => {
+    const updates = {
+      completed: false,
+      completed_at: null,
+      updated_at: new Date().toISOString(),
+    }
+    const { data, error } = await supabase
+      .from('assignments')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (!error)
+      set((s) => ({ assignments: s.assignments.map((a) => (a.id === id ? data : a)) }))
+    return { data, error }
+  },
 }))

@@ -1,9 +1,24 @@
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, CheckSquare } from 'lucide-react'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { useTaskStore } from '../../stores/useTaskStore'
+import { showToast } from '../../lib/toast'
 import DeleteAccountModal from './DeleteAccountModal'
 
 export default function DangerSection() {
+  const { user } = useAuthStore()
+  const { deleteCompletedTasks } = useTaskStore()
   const [modalOpen, setModalOpen] = useState(false)
+  const [deletingCompleted, setDeletingCompleted] = useState(false)
+
+  async function handleDeleteCompleted() {
+    if (!confirm('Delete all completed tasks? This cannot be undone.')) return
+    setDeletingCompleted(true)
+    const { error } = await deleteCompletedTasks(user.id)
+    setDeletingCompleted(false)
+    if (error) showToast({ message: error.message, variant: 'error' })
+    else showToast({ message: 'Completed tasks deleted', variant: 'success' })
+  }
 
   return (
     <div className="space-y-8">
@@ -12,6 +27,27 @@ export default function DangerSection() {
         <p className="text-xs text-gray-400 dark:text-gray-500">Irreversible actions. Proceed with care.</p>
       </div>
 
+      {/* Delete completed tasks */}
+      <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Delete completed tasks</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm">
+              Permanently remove all tasks you've already marked as complete across all lists.
+            </p>
+          </div>
+          <button
+            onClick={handleDeleteCompleted}
+            disabled={deletingCompleted}
+            className="flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50"
+          >
+            <CheckSquare size={14} />
+            {deletingCompleted ? 'Deleting…' : 'Delete completed'}
+          </button>
+        </div>
+      </div>
+
+      {/* Delete account */}
       <div className="border-2 border-rose-200 dark:border-rose-900/50 rounded-2xl p-5">
         <div className="flex items-start justify-between gap-4">
           <div>

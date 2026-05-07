@@ -1,17 +1,21 @@
 import { useState } from 'react'
-import { User, Palette, Bell, Database, AlertTriangle } from 'lucide-react'
+import { User, Palette, Bell, Database, AlertTriangle, LayoutGrid, Info } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import AccountSection from './AccountSection'
 import AppearanceSection from './AppearanceSection'
 import NotificationsSection from './NotificationsSection'
 import DataSection from './DataSection'
 import DangerSection from './DangerSection'
+import SpacesSection from './SpacesSection'
+import AboutSection from './AboutSection'
 
 const SECTIONS = [
   { id: 'account',       label: 'Account',       icon: User,          component: AccountSection },
   { id: 'appearance',    label: 'Appearance',     icon: Palette,       component: AppearanceSection },
+  { id: 'spaces',        label: 'Spaces',         icon: LayoutGrid,    component: SpacesSection },
   { id: 'notifications', label: 'Notifications',  icon: Bell,          component: NotificationsSection },
   { id: 'data',          label: 'Data',           icon: Database,      component: DataSection },
+  { id: 'about',         label: 'About',          icon: Info,          component: AboutSection },
   { id: 'danger',        label: 'Danger Zone',    icon: AlertTriangle, component: DangerSection, danger: true },
 ]
 
@@ -20,7 +24,7 @@ export default function Settings() {
   const ActiveComponent = SECTIONS.find((s) => s.id === active)?.component
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
       <div className="px-8 pt-8 pb-5 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
       </div>

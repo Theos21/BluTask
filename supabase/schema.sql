@@ -149,3 +149,23 @@ create index if not exists idx_assignments_user_due on public.assignments(user_i
 create index if not exists idx_tasks_user_due on public.tasks(user_id, due_date);
 create index if not exists idx_tasks_list on public.tasks(list_id);
 create index if not exists idx_checklist_task on public.checklist_items(task_id, position);
+
+-- ── Phase 1 migrations ──────────────────────────────────────────────────────
+-- Run these in Supabase SQL Editor if upgrading an existing database:
+--
+-- alter table public.profiles
+--   add column if not exists show_school boolean not null default true;
+--
+-- alter table public.assignments
+--   add column if not exists checklist  jsonb        not null default '[]',
+--   add column if not exists completed  boolean      not null default false,
+--   add column if not exists completed_at timestamptz;
+-- ────────────────────────────────────────────────────────────────────────────
+
+alter table public.profiles
+  add column if not exists show_school boolean not null default true;
+
+alter table public.assignments
+  add column if not exists checklist     jsonb        not null default '[]',
+  add column if not exists completed     boolean      not null default false,
+  add column if not exists completed_at  timestamptz;
