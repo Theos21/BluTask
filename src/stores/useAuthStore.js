@@ -43,11 +43,16 @@ export const useAuthStore = create((set, get) => ({
       return
     }
 
-    // No row yet (user signed up before trigger existed) - create one
+    // No row yet — create one, pulling name from OAuth metadata if available
     if (error?.code === 'PGRST116') {
+      const user = get().user
+      const fullName =
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        null
       const { data: created } = await supabase
         .from('profiles')
-        .insert([{ id: userId }])
+        .insert([{ id: userId, full_name: fullName, onboarding_complete: false }])
         .select()
         .single()
       if (created) set({ profile: created })

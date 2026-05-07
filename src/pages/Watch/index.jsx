@@ -145,8 +145,7 @@ function ShowCard({ show, onClick }) {
 function SectionDivider({ label, top = false }) {
   return (
     <div className={`flex items-center gap-3 ${top ? 'mb-7' : 'my-10'}`}>
-      {!top && <div className="flex-1 h-px bg-gray-100 dark:bg-white/[0.06]" />}
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 flex-shrink-0">
         {label}
       </span>
       <div className="flex-1 h-px bg-gray-100 dark:bg-white/[0.06]" />

@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/sidebar'
 import AppSidebar from './Sidebar'
+import UpdaterBanner from '../UpdaterBanner'
 
 export default function AppLayout() {
   const { pathname } = useLocation()
@@ -20,6 +21,7 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </SidebarInset>
+      <UpdaterBanner />
     </SidebarProvider>
   )
 }

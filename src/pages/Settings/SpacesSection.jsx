@@ -24,22 +24,38 @@ function Toggle({ enabled, onToggle, disabled }) {
 export default function SpacesSection() {
   const { profile, patchProfile, updateProfile } = useAuthStore()
   const [showSchool, setShowSchool] = useState(profile?.show_school ?? true)
+  const [showWatch, setShowWatch] = useState(profile?.show_watch ?? true)
 
-  // Sync local state when profile loads or changes from outside
   useEffect(() => {
     if (profile != null) setShowSchool(profile.show_school ?? true)
   }, [profile?.show_school])
 
+  useEffect(() => {
+    if (profile != null) setShowWatch(profile.show_watch ?? true)
+  }, [profile?.show_watch])
+
   async function toggleSchool() {
     const newValue = !showSchool
-    // Optimistic update - toggle and sidebar update instantly
     setShowSchool(newValue)
     patchProfile({ show_school: newValue })
     const { error } = await updateProfile({ show_school: newValue })
     if (error) {
-      // Revert on failure
       setShowSchool(!newValue)
       patchProfile({ show_school: !newValue })
+      showToast({ message: 'Failed to save', variant: 'error' })
+    } else {
+      showToast({ message: 'Changes saved', variant: 'success' })
+    }
+  }
+
+  async function toggleWatch() {
+    const newValue = !showWatch
+    setShowWatch(newValue)
+    patchProfile({ show_watch: newValue })
+    const { error } = await updateProfile({ show_watch: newValue })
+    if (error) {
+      setShowWatch(!newValue)
+      patchProfile({ show_watch: !newValue })
       showToast({ message: 'Failed to save', variant: 'error' })
     } else {
       showToast({ message: 'Changes saved', variant: 'success' })
@@ -63,18 +79,13 @@ export default function SpacesSection() {
           <Toggle enabled={showSchool} onToggle={toggleSchool} />
         </div>
 
-        {/* Watch - coming soon */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800 opacity-50">
+        {/* Watch */}
+        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Watch</p>
-              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded uppercase tracking-wide">
-                Coming soon
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Routine blocks and time tracking</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Watch</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Track shows and movies</p>
           </div>
-          <Toggle enabled={false} disabled />
+          <Toggle enabled={showWatch} onToggle={toggleWatch} />
         </div>
       </div>
     </div>

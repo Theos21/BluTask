@@ -118,10 +118,12 @@ function SidebarNav() {
 
   const collapsed = state === 'collapsed'
   const showSchool = profile?.show_school ?? true
+  const showWatch = profile?.show_watch ?? true
 
+  const baseItems = showWatch ? BASE_NAV : BASE_NAV.filter(i => i.to !== '/watch')
   const navItems = showSchool
-    ? [BASE_NAV[0], SCHOOL_ITEM, ...BASE_NAV.slice(1)]
-    : BASE_NAV
+    ? [baseItems[0], SCHOOL_ITEM, ...baseItems.slice(1)]
+    : baseItems
 
   const isActive = (to) => {
     if (to === '/') return location.pathname === '/'
