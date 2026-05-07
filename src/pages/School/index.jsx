@@ -5,6 +5,7 @@ import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { getColorByValue, TYPE_CATEGORIES, getTypeByValue } from '../../lib/constants'
 import EmptyState from '../../components/ui/EmptyState'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 import ClassModal from './ClassModal'
 import AssignmentModal from './AssignmentModal'
 import AssignmentRow from './AssignmentRow'
@@ -34,6 +35,7 @@ export default function School() {
   const [studyModeOpen, setStudyModeOpen] = useState(false)
   const [studyClass, setStudyClass] = useState(null)
   const [studyAssignment, setStudyAssignment] = useState(null)
+  const [deleteClassConfirm, setDeleteClassConfirm] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -239,7 +241,7 @@ export default function School() {
                                   <Pencil size={12} /> Edit
                                 </button>
                                 <button
-                                  onClick={async (e) => { e.stopPropagation(); await deleteClass(cls.id); setClassMenuOpen(null) }}
+                                  onClick={(e) => { e.stopPropagation(); setDeleteClassConfirm(cls); setClassMenuOpen(null) }}
                                   className="w-full text-left px-3 py-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-2"
                                 >
                                   <Trash2 size={12} /> Delete
@@ -340,6 +342,14 @@ export default function School() {
         currentAssignment={studyAssignment}
       />
     )}
+    <ConfirmDeleteModal
+      isOpen={!!deleteClassConfirm}
+      onClose={() => setDeleteClassConfirm(null)}
+      onConfirm={() => deleteClass(deleteClassConfirm.id)}
+      title={`Delete ${deleteClassConfirm?.name}?`}
+      description={`This will permanently delete all assignments in this class. This cannot be undone.`}
+      confirmLabel="Delete class"
+    />
     </div>
   )
 }

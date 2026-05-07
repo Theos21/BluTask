@@ -5,6 +5,7 @@ import { useWatchStore } from '../../stores/useWatchStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { showToast } from '../../lib/toast'
 import AddShowModal from './AddShowModal'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 const STATUS_CONFIG = {
   watching:      { label: 'Watching',      dot: 'bg-green-400' },
@@ -239,6 +240,7 @@ function DetailPanel({ show, onClose, onUpdate, onDelete }) {
   const [notes, setNotes] = useState(show.notes || '')
   const [rating, setRating] = useState(show.rating || 0)
   const [saving, setSaving] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
 
   useEffect(() => {
     setStatus(show.status)
@@ -448,11 +450,19 @@ function DetailPanel({ show, onClose, onUpdate, onDelete }) {
               Mark as finished
             </button>
           )}
-          <button onClick={handleDelete} className="w-full text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 py-2 rounded-lg transition-colors">
+          <button onClick={() => setDeleteConfirm(true)} className="w-full text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 py-2 rounded-lg transition-colors">
             Delete
           </button>
         </div>
       </div>
+      <ConfirmDeleteModal
+        isOpen={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={`Delete "${show.title}"?`}
+        description={`This will permanently remove it from your ${show.type === 'movie' ? 'movie' : 'show'} list. This cannot be undone.`}
+        confirmLabel={`Delete ${show.type === 'movie' ? 'movie' : 'show'}`}
+      />
     </div>
   )
 }

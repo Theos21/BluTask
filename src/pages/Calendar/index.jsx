@@ -10,6 +10,7 @@ import { useTaskStore } from '../../stores/useTaskStore'
 import { useRoutineStore } from '../../stores/useRoutineStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import RoutineBlockModal from '../Watch/RoutineBlockModal'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 const GRID_START = 6
 const GRID_END = 23
@@ -40,6 +41,7 @@ export default function Calendar() {
   const [showBuilderPanel, setShowBuilderPanel] = useState(false)
   const [activeBlock, setActiveBlock] = useState(null)
   const [mobileDaySheetOpen, setMobileDaySheetOpen] = useState(false)
+  const [deleteBlockConfirm, setDeleteBlockConfirm] = useState(null)
 
   const { assignments, classes, fetchClasses, fetchAssignments } = useSchoolStore()
   const { tasks, fetchTasks } = useTaskStore()
@@ -104,10 +106,11 @@ export default function Calendar() {
     setRoutineModalOpen(true)
   }
 
-  async function handleDeleteBlock(id, e) {
+  function handleDeleteBlock(id, e) {
     e.stopPropagation()
+    const block = routineBlocks.find(b => b.id === id)
+    setDeleteBlockConfirm(block || { id, name: 'this block' })
     setActiveBlock(null)
-    await deleteRoutineBlock(id)
   }
 
   function DayDetailPanel() {
@@ -669,6 +672,14 @@ export default function Calendar() {
         </>
       )}
 
+      <ConfirmDeleteModal
+        isOpen={!!deleteBlockConfirm}
+        onClose={() => setDeleteBlockConfirm(null)}
+        onConfirm={() => deleteRoutineBlock(deleteBlockConfirm.id)}
+        title={`Delete "${deleteBlockConfirm?.name}"?`}
+        description="This routine block will be permanently removed from your schedule. This cannot be undone."
+        confirmLabel="Delete block"
+      />
       <RoutineBlockModal
         isOpen={routineModalOpen}
         onClose={() => { setRoutineModalOpen(false); setEditBlock(null) }}

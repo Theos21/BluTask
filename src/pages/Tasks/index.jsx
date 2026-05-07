@@ -11,6 +11,7 @@ import ListModal from './ListModal'
 import TaskModal from './TaskModal'
 import TaskRow from './TaskRow'
 import TasksSmartImportModal from './SmartImportModal'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 function ListNavItem({ active, onClick, onContextMenu, color, name, count }) {
   return (
@@ -57,6 +58,7 @@ export default function Tasks() {
 
   const [ctxMenu, setCtxMenu] = useState(null)
   const ctxMenuRef = useRef(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const [addingHeader, setAddingHeader] = useState(false)
   const [newHeaderTitle, setNewHeaderTitle] = useState('')
@@ -187,12 +189,9 @@ export default function Tasks() {
     setCtxMenu(null)
   }
 
-  async function handleCtxDeleteFolder(id) {
-    await deleteFolder(id)
-    if (selectedView.type === 'list') {
-      const list = lists.find(l => l.id === selectedView.id)
-      if (list?.folder_id === id) setSelectedView({ type: 'inbox' })
-    }
+  function handleCtxDeleteFolder(id) {
+    const folder = folders.find(f => f.id === id)
+    setDeleteConfirm({ type: 'folder', id, name: folder?.name || 'this folder' })
     setCtxMenu(null)
   }
 
@@ -202,10 +201,27 @@ export default function Tasks() {
     setCtxMenu(null)
   }
 
-  async function handleCtxDeleteList(id) {
-    await deleteList(id)
-    if (selectedView.id === id) setSelectedView({ type: 'inbox' })
+  function handleCtxDeleteList(id) {
+    const list = lists.find(l => l.id === id)
+    setDeleteConfirm({ type: 'list', id, name: list?.name || 'this list' })
     setCtxMenu(null)
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteConfirm) return
+    const { type, id } = deleteConfirm
+    if (type === 'folder') {
+      await deleteFolder(id)
+      if (selectedView.type === 'list') {
+        const list = lists.find(l => l.id === selectedView.id)
+        if (list?.folder_id === id) setSelectedView({ type: 'inbox' })
+      }
+    } else if (type === 'list') {
+      await deleteList(id)
+      if (selectedView.id === id) setSelectedView({ type: 'inbox' })
+    } else if (type === 'header') {
+      await deleteHeader(id)
+    }
   }
 
   const unfolderedLists = lists.filter(l => !l.folder_id)
@@ -611,7 +627,7 @@ export default function Tasks() {
                               <Plus size={12} />
                             </button>
                             <button
-                              onClick={() => deleteHeader(header.id)}
+                              onClick={() => setDeleteConfirm({ type: 'header', id: header.id, name: header.title })}
                               className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-rose-500 transition-all"
                             >
                               <Trash2 size={11} />
@@ -761,6 +777,32 @@ export default function Tasks() {
       <TasksSmartImportModal
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
+      />
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={handleConfirmDelete}
+        title={
+          deleteConfirm?.type === 'folder'
+            ? `Delete ${deleteConfirm.name}?`
+            : deleteConfirm?.type === 'list'
+            ? `Delete ${deleteConfirm.name}?`
+            : `Delete section "${deleteConfirm?.name}"?`
+        }
+        description={
+          deleteConfirm?.type === 'folder'
+            ? 'This will permanently delete the folder and all lists and tasks inside it. This cannot be undone.'
+            : deleteConfirm?.type === 'list'
+            ? 'All tasks in this list will be permanently deleted. This cannot be undone.'
+            : 'This section header will be removed. Tasks inside it will remain. This cannot be undone.'
+        }
+        confirmLabel={
+          deleteConfirm?.type === 'folder'
+            ? 'Delete folder'
+            : deleteConfirm?.type === 'list'
+            ? 'Delete list'
+            : 'Delete section'
+        }
       />
     </div>
   )

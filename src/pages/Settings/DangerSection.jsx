@@ -4,15 +4,16 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useTaskStore } from '../../stores/useTaskStore'
 import { showToast } from '../../lib/toast'
 import DeleteAccountModal from './DeleteAccountModal'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 export default function DangerSection() {
   const { user } = useAuthStore()
   const { deleteCompletedTasks } = useTaskStore()
   const [modalOpen, setModalOpen] = useState(false)
   const [deletingCompleted, setDeletingCompleted] = useState(false)
+  const [confirmDeleteCompleted, setConfirmDeleteCompleted] = useState(false)
 
   async function handleDeleteCompleted() {
-    if (!confirm('Delete all completed tasks? This cannot be undone.')) return
     setDeletingCompleted(true)
     const { error } = await deleteCompletedTasks(user.id)
     setDeletingCompleted(false)
@@ -37,7 +38,7 @@ export default function DangerSection() {
             </p>
           </div>
           <button
-            onClick={handleDeleteCompleted}
+            onClick={() => setConfirmDeleteCompleted(true)}
             disabled={deletingCompleted}
             className="flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50"
           >
@@ -67,6 +68,14 @@ export default function DangerSection() {
       </div>
 
       <DeleteAccountModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+      <ConfirmDeleteModal
+        isOpen={confirmDeleteCompleted}
+        onClose={() => setConfirmDeleteCompleted(false)}
+        onConfirm={handleDeleteCompleted}
+        title="Delete all completed tasks?"
+        description="This will permanently remove every task you've marked as complete across all lists. This cannot be undone."
+        confirmLabel="Delete completed"
+      />
     </div>
   )
 }
