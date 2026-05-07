@@ -35,7 +35,7 @@ export default function Auth() {
     if (mode === 'signin') {
       const { error } = await signIn(email, password)
       if (error) setError(error.message)
-      else navigate('/', { replace: true })
+      else navigate('/home', { replace: true })
     } else {
       const { error } = await signUp(email, password, fullName.trim())
       if (error) setError(error.message)

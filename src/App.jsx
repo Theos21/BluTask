@@ -8,6 +8,7 @@ import { toasterRef, triggerUndo } from './lib/toast'
 import CommandPalette from './components/CommandPalette'
 import ShortcutsModal from './components/ShortcutsModal'
 import Auth from './pages/Auth'
+import Landing from './pages/Landing'
 import Home from './pages/Home'
 import School from './pages/School'
 import Watch from './pages/Watch'
@@ -43,15 +44,22 @@ function OnboardingRoute({ children }) {
   const { user, loading, profile } = useAuthStore()
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/auth" replace />
-  if (profile?.onboarding_complete) return <Navigate to="/" replace />
+  if (profile?.onboarding_complete) return <Navigate to="/home" replace />
   return children
 }
 
 function AuthRoute() {
   const { user, loading } = useAuthStore()
   if (loading) return <Spinner />
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to="/home" replace />
   return <Auth />
+}
+
+function LandingRoute() {
+  const { user, loading } = useAuthStore()
+  if (loading) return <Spinner />
+  if (user) return <Navigate to="/home" replace />
+  return <Landing />
 }
 
 export default function App() {
@@ -112,22 +120,30 @@ export default function App() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const { pathname } = useLocation()
+  const isLanding = pathname === '/'
+
   return (
     <>
       <Toaster ref={toasterRef} defaultPosition="bottom-right" />
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      {/* ? button — bottom right corner */}
-      <button
-        onClick={() => setShortcutsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200 text-xs font-semibold transition-colors flex items-center justify-center shadow-sm"
-        title="Keyboard shortcuts (?)"
-      >
-        ?
-      </button>
+      {/* ? button — bottom right corner, hidden on landing */}
+      {!isLanding && (
+        <button
+          onClick={() => setShortcutsOpen(true)}
+          className="fixed bottom-4 right-4 z-50 w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200 text-xs font-semibold transition-colors flex items-center justify-center shadow-sm"
+          title="Keyboard shortcuts (?)"
+        >
+          ?
+        </button>
+      )}
 
       <Routes>
+        {/* Landing */}
+        <Route path="/" element={<LandingRoute />} />
+
         {/* Public — no auth check */}
         <Route path="/auth" element={<AuthRoute />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -143,9 +159,9 @@ export default function App() {
           }
         />
 
-        {/* Protected */}
+        {/* Protected dashboard — all app routes under /home */}
         <Route
-          path="/"
+          path="/home"
           element={
             <ProtectedRoute>
               <AppLayout />

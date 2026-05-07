@@ -75,7 +75,7 @@ export default function Onboarding() {
       })
     }
 
-    navigate('/', { replace: true })
+    navigate('/home', { replace: true })
   }
 
   return (

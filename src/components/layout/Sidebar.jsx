@@ -22,13 +22,13 @@ import {
 } from '@/components/sidebar'
 
 const BASE_NAV = [
-  { to: '/',         label: 'Home',     icon: Home,          accentHex: '#9ca3af' },
-  { to: '/watch',    label: 'Watch',    icon: Clock,         accentHex: '#f59e0b' },
-  { to: '/tasks',    label: 'Tasks',    icon: CheckSquare,   accentHex: '#14b8a6' },
-  { to: '/calendar', label: 'Calendar', icon: Calendar,      accentHex: '#f43f5e' },
+  { to: '/home',          label: 'Home',     icon: Home,          accentHex: '#9ca3af' },
+  { to: '/home/watch',    label: 'Watch',    icon: Clock,         accentHex: '#f59e0b' },
+  { to: '/home/tasks',    label: 'Tasks',    icon: CheckSquare,   accentHex: '#14b8a6' },
+  { to: '/home/calendar', label: 'Calendar', icon: Calendar,      accentHex: '#f43f5e' },
 ]
 
-const SCHOOL_ITEM = { to: '/school', label: 'School', icon: GraduationCap, accentHex: '#6366f1' }
+const SCHOOL_ITEM = { to: '/home/school', label: 'School', icon: GraduationCap, accentHex: '#6366f1' }
 
 function NavBadge({ count, overdue }) {
   if (!count) return null
@@ -120,23 +120,23 @@ function SidebarNav() {
   const showSchool = profile?.show_school ?? true
   const showWatch = profile?.show_watch ?? true
 
-  const baseItems = showWatch ? BASE_NAV : BASE_NAV.filter(i => i.to !== '/watch')
+  const baseItems = showWatch ? BASE_NAV : BASE_NAV.filter(i => i.to !== '/home/watch')
   const navItems = showSchool
     ? [baseItems[0], SCHOOL_ITEM, ...baseItems.slice(1)]
     : baseItems
 
   const isActive = (to) => {
-    if (to === '/') return location.pathname === '/'
+    if (to === '/home') return location.pathname === '/home'
     return location.pathname.startsWith(to)
   }
 
   function getBadge(to) {
-    if (to === '/tasks') return taskBadge.count > 0 ? taskBadge : null
-    if (to === '/school') return schoolBadge.count > 0 ? schoolBadge : null
+    if (to === '/home/tasks') return taskBadge.count > 0 ? taskBadge : null
+    if (to === '/home/school') return schoolBadge.count > 0 ? schoolBadge : null
     return null
   }
 
-  const archiveActive = location.pathname.startsWith('/archive')
+  const archiveActive = location.pathname.startsWith('/home/archive')
 
   const firstName = profile?.display_name
     || profile?.full_name?.split(' ')[0]
@@ -193,7 +193,7 @@ function SidebarNav() {
                   'pl-5'
                 )}
               >
-                <NavLink to="/archive" className="flex items-center w-full">
+                <NavLink to="/home/archive" className="flex items-center w-full">
                   <Archive
                     size={14}
                     className="flex-shrink-0 hidden group-data-[collapsible=icon]:block"
@@ -239,10 +239,10 @@ function SidebarNav() {
                 </span>
               )}
               <button
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate('/home/settings')}
                 className={cn(
                   'p-1.5 rounded-md transition-colors flex-shrink-0',
-                  location.pathname === '/settings'
+                  location.pathname === '/home/settings'
                     ? 'text-[color:var(--color-accent)]'
                     : 'text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400'
                 )}

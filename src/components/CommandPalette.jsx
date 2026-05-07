@@ -97,7 +97,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         Icon: CheckSquare,
         iconBg: '#f0fdf4',
         iconColor: '#16a34a',
-        action: () => navigate('/tasks'),
+        action: () => navigate('/home/tasks'),
       })
     })
 
@@ -113,7 +113,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         Icon: GraduationCap,
         iconBg: '#eef2ff',
         iconColor: '#6366f1',
-        action: () => navigate('/school'),
+        action: () => navigate('/home/school'),
       })
     })
 
@@ -127,7 +127,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         Icon: Clock,
         iconBg: '#fffbeb',
         iconColor: '#d97706',
-        action: () => navigate('/watch'),
+        action: () => navigate('/home/watch'),
       })
     })
 
@@ -141,7 +141,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         Icon: List,
         iconBg: l.color ? l.color + '20' : '#f3f4f6',
         iconColor: l.color || '#6b7280',
-        action: () => navigate('/tasks'),
+        action: () => navigate('/home/tasks'),
       })
     })
 
