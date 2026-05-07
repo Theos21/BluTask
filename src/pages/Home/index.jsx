@@ -73,14 +73,14 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto w-full h-full flex overflow-hidden">
-      {/* Left column */}
-      <div className="flex-1 overflow-y-auto px-10 py-10">
+    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col md:flex-row overflow-hidden">
+      {/* Left column — full width on mobile, flex-1 on desktop */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 md:px-10 md:py-10">
         {/* Greeting */}
-        <div className="mb-10">
+        <div className="mb-6 md:mb-10">
           <h1
             className="text-gray-900 dark:text-gray-100 leading-tight"
-            style={{ fontSize: 32, fontWeight: 300 }}
+            style={{ fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: 300 }}
           >
             {getGreeting()}, {displayName}
           </h1>
@@ -201,7 +201,7 @@ export default function Home() {
       </div>
 
       {/* Right column */}
-      <div className="w-72 flex-shrink-0 border-l border-gray-100 dark:border-white/[0.04] px-6 py-10 overflow-hidden flex flex-col">
+      <div className="w-full border-t border-gray-100 dark:border-white/[0.04] px-4 py-6 overflow-hidden flex flex-col md:w-72 md:flex-shrink-0 md:border-t-0 md:border-l md:px-6 md:py-10">
         <DayStrip
           routineBlocks={routineBlocks}
           tasks={todayTasks}

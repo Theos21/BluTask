@@ -39,6 +39,7 @@ export default function Calendar() {
   const [defaultDay, setDefaultDay] = useState(null)
   const [showBuilderPanel, setShowBuilderPanel] = useState(false)
   const [activeBlock, setActiveBlock] = useState(null)
+  const [mobileDaySheetOpen, setMobileDaySheetOpen] = useState(false)
 
   const { assignments, classes, fetchClasses, fetchAssignments } = useSchoolStore()
   const { tasks, fetchTasks } = useTaskStore()
@@ -376,7 +377,7 @@ export default function Calendar() {
                   return (
                     <button
                       key={day.toISOString()}
-                      onClick={() => setSelectedDay(day)}
+                      onClick={() => { setSelectedDay(day); setMobileDaySheetOpen(true) }}
                       className={`relative p-2 rounded-xl text-left transition-colors ${
                         !inMonth ? 'opacity-30' : ''
                       } ${
@@ -434,7 +435,7 @@ export default function Calendar() {
           </>
         ) : (
           <>
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
               <div className="flex flex-shrink-0 border-b border-gray-100 dark:border-gray-800/60">
                 <div className="w-14 flex-shrink-0" />
                 {weekDays.map((day, i) => {
@@ -442,13 +443,12 @@ export default function Calendar() {
                   return (
                     <div
                       key={i}
-                      className={`flex-1 py-3 text-center border-l border-gray-100 dark:border-gray-800/60 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${
+                      className={`flex-1 min-w-[90px] py-3 text-center border-l border-gray-100 dark:border-gray-800/60 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${
                         today ? 'bg-rose-50/60 dark:bg-rose-900/10' : ''
                       }`}
                       onClick={() => {
                         setSelectedDay(day)
-                        setView('month')
-                        setCurrentMonth(day)
+                        setMobileDaySheetOpen(true)
                       }}
                     >
                       <p
@@ -476,7 +476,7 @@ export default function Calendar() {
                     {HOURS.map((h) => (
                       <div
                         key={h}
-                        className="absolute right-2 text-xs text-gray-400 dark:text-gray-500 select-none"
+                        className="absolute right-2 text-[11px] md:text-xs text-gray-400 dark:text-gray-500 select-none"
                         style={{ top: (h - GRID_START) * HOUR_PX - 8 }}
                       >
                         {formatHour(h)}
@@ -500,7 +500,7 @@ export default function Calendar() {
                     return (
                       <div
                         key={colIdx}
-                        className={`flex-1 relative border-l border-gray-100 dark:border-gray-800/40 ${
+                        className={`flex-1 min-w-[90px] relative border-l border-gray-100 dark:border-gray-800/40 ${
                           today ? 'bg-rose-50/10 dark:bg-rose-900/5' : ''
                         }`}
                       >
@@ -642,12 +642,32 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="w-64 flex-shrink-0 border-l border-gray-100 dark:border-gray-800/60 overflow-y-auto">
+            <div className="hidden md:flex flex-col w-64 flex-shrink-0 border-l border-gray-100 dark:border-gray-800/60 overflow-y-auto">
               <DayDetailPanel />
             </div>
           </>
         )}
       </div>
+
+      {mobileDaySheetOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30 md:hidden"
+            onClick={() => setMobileDaySheetOpen(false)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 md:hidden flex flex-col"
+            style={{ height: '70vh' }}
+          >
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <DayDetailPanel />
+            </div>
+          </div>
+        </>
+      )}
 
       <RoutineBlockModal
         isOpen={routineModalOpen}
