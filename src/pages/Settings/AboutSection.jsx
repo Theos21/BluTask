@@ -1,22 +1,42 @@
-import { useState } from 'react'
+/* global __APP_VERSION__ */
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ExternalLink } from 'lucide-react'
+import { checkForUpdate, doRelaunch } from '../../lib/updater'
 
-const VERSION = '1.0.0'
+// Injected by Vite at build time from src-tauri/tauri.conf.json
+const VERSION = __APP_VERSION__
+const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
 
 const CHANGELOG = [
+  {
+    version: '1.0.1',
+    date: 'May 2025',
+    changes: [
+      'Added landing page for web users',
+      'Added Google sign-in',
+      'Windows desktop app with built-in auto-updater',
+      'Watch space can now be disabled in Settings',
+      'Added confirmation dialogs before destructive deletes',
+      'Home: right column stacks on small screens',
+      'Calendar: week view scrolls horizontally on mobile, day detail opens as bottom sheet',
+      'Fixed password reset links on non-localhost domains',
+      'Fixed Watch section divider alignment',
+      'Desktop app goes directly to login instead of the landing page',
+    ],
+  },
   {
     version: '1.0.0',
     date: 'May 2025',
     changes: [
-      'Initial release — Tasks, School, Calendar, Watch, and Home',
+      'Initial release with Tasks, School, Calendar, Watch, and Home',
       'Onboarding flow with space selection',
       'Command palette (Cmd+K)',
       'Keyboard shortcuts panel',
       'Smart import for tasks and assignments',
-      'Dark / light mode with accent color',
+      'Dark and light mode with accent color picker',
       'Sidebar badges for due and overdue items',
-      'Sort & filter in task lists',
+      'Sort and filter in task lists',
       'Markdown notes with preview',
       'Study mode with Pomodoro timer',
     ],
@@ -72,6 +92,117 @@ function ChangelogModal({ onClose }) {
   )
 }
 
+// Inline update UI shown when a new version is found via manual check
+function UpdateRow({ update }) {
+  const [dlStatus, setDlStatus] = useState('idle') // idle | downloading | done
+  const [progress, setProgress] = useState(0)
+
+  async function handleInstall() {
+    setDlStatus('downloading')
+    let downloaded = 0
+    let total = 0
+    await update.downloadAndInstall((event) => {
+      if (event.event === 'Started') {
+        total = event.data.contentLength ?? 0
+      } else if (event.event === 'Progress') {
+        downloaded += event.data.chunkLength
+        if (total > 0) setProgress(Math.round((downloaded / total) * 100))
+      } else if (event.event === 'Finished') {
+        setDlStatus('done')
+      }
+    })
+    await doRelaunch()
+  }
+
+  if (dlStatus === 'done') {
+    return <span className="text-xs text-teal-600 dark:text-teal-400">Restarting…</span>
+  }
+
+  if (dlStatus === 'downloading') {
+    return (
+      <div className="flex items-center gap-2 min-w-[140px]">
+        <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-blue-500 transition-all duration-200"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">
+          {progress > 0 ? `${progress}%` : '…'}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500 dark:text-gray-400">v{update.version} available</span>
+      <button
+        onClick={handleInstall}
+        className="text-xs font-medium px-2 py-0.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+      >
+        Update now
+      </button>
+    </div>
+  )
+}
+
+function UpdateCheckRow() {
+  const [status, setStatus] = useState('idle') // idle | checking | latest | found | error
+  const [update, setUpdate] = useState(null)
+
+  // Auto-dismiss transient states
+  useEffect(() => {
+    if (status !== 'latest' && status !== 'error') return
+    const t = setTimeout(() => setStatus('idle'), status === 'error' ? 5000 : 4000)
+    return () => clearTimeout(t)
+  }, [status])
+
+  async function handleCheck() {
+    setStatus('checking')
+    setUpdate(null)
+    try {
+      const u = await checkForUpdate()
+      if (u?.available) {
+        setUpdate(u)
+        setStatus('found')
+      } else {
+        setStatus('latest')
+      }
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-800">
+      <span className="text-xs text-gray-600 dark:text-gray-400">Updates</span>
+      <div className="text-right">
+        {status === 'idle' && (
+          <button
+            onClick={handleCheck}
+            className="text-xs text-[color:var(--color-accent)] hover:underline transition-colors"
+          >
+            Check for updates
+          </button>
+        )}
+        {status === 'checking' && (
+          <span className="text-xs text-gray-400 dark:text-gray-500">Checking…</span>
+        )}
+        {status === 'latest' && (
+          <span className="text-xs text-teal-600 dark:text-teal-400">You're on the latest version</span>
+        )}
+        {status === 'error' && (
+          <span className="text-xs text-rose-500 dark:text-rose-400">
+            Unable to check for updates. Try again later.
+          </span>
+        )}
+        {status === 'found' && update && <UpdateRow update={update} />}
+      </div>
+    </div>
+  )
+}
+
 export default function AboutSection() {
   const [changelogOpen, setChangelogOpen] = useState(false)
 
@@ -120,6 +251,7 @@ export default function AboutSection() {
             View changelog <ExternalLink size={10} />
           </button>
         </div>
+        {isTauri && <UpdateCheckRow />}
       </div>
 
       {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}

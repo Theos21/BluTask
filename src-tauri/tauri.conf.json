@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "BluTask",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "identifier": "com.blutask.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -35,12 +35,8 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
-    },
-    "windows": {
-      "nsis": {
-        "installerFilename": "BluTask_x64-setup"
-      }
     }
+
   },
   "plugins": {
     "updater": {

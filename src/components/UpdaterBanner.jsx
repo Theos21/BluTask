@@ -1,24 +1,5 @@
 import { useEffect, useState } from 'react'
-
-// Dynamically import Tauri plugins — only available in the desktop build.
-// Falls back silently in the browser / dev server.
-async function checkForUpdate() {
-  try {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    return await check()
-  } catch {
-    return null
-  }
-}
-
-async function doRelaunch() {
-  try {
-    const { restart } = await import('@tauri-apps/plugin-process')
-    await restart()
-  } catch {
-    window.location.reload()
-  }
-}
+import { checkForUpdate, doRelaunch } from '../lib/updater'
 
 export default function UpdaterBanner() {
   const [update, setUpdate] = useState(null)
@@ -31,8 +12,12 @@ export default function UpdaterBanner() {
     if (!window.__TAURI_INTERNALS__) return
 
     const timer = setTimeout(async () => {
-      const u = await checkForUpdate()
-      if (u?.available) setUpdate(u)
+      try {
+        const u = await checkForUpdate()
+        if (u?.available) setUpdate(u)
+      } catch {
+        // silent — auto-check failures are not surfaced to the user
+      }
     }, 3000)
 
     return () => clearTimeout(timer)

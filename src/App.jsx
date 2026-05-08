@@ -55,10 +55,13 @@ function AuthRoute() {
   return <Auth />
 }
 
+const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
+
 function LandingRoute() {
   const { user, loading } = useAuthStore()
   if (loading) return <Spinner />
   if (user) return <Navigate to="/home" replace />
+  if (isTauri) return <Navigate to="/auth" replace />
   return <Landing />
 }
 
