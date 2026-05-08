@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "BluTask",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "identifier": "com.blutask.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -26,6 +26,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,7 +44,6 @@
       "endpoints": [
         "https://github.com/Theos21/BluTask/releases/latest/download/latest.json"
       ],
-      "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNCRDlBNkY4MkE2NUU2NDAKUldSQTVtVXErS2JaTzgzYzJVZ0wxVzdhMEZjTERqQ3BvNzRmSzdhY1pFTGR4VnIxWHhjWmkrc04K"
     }
   }
