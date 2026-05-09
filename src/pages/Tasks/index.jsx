@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, CheckSquare, Inbox, ChevronRight, ChevronDown, Tag, Trash2, Upload, ArrowUpDown, Filter } from 'lucide-react'
-import { isPast, isToday } from 'date-fns'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Plus, CheckSquare, Inbox, ChevronRight, ChevronDown, Tag, Trash2, Upload, ArrowUpDown, Filter, X, Star, Clock, GraduationCap } from 'lucide-react'
+import { isPast, isToday, addDays, isSameDay, startOfDay, format } from 'date-fns'
 import { useTaskStore } from '../../stores/useTaskStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useFolderStore } from '../../stores/useFolderStore'
 import { useTagStore } from '../../stores/useTagStore'
+import { useSchoolStore } from '../../stores/useSchoolStore'
 import FolderModal from './FolderModal'
 import ListModal from './ListModal'
 import TaskModal from './TaskModal'
@@ -36,6 +38,9 @@ export default function Tasks() {
   const { lists, tasks, headers, fetchLists, fetchTasks, fetchHeaders, deleteList, addHeader, updateHeader, deleteHeader } = useTaskStore()
   const { folders, fetchFolders, updateFolder, deleteFolder } = useFolderStore()
   const { tags, taskTags, fetchTags, fetchTaskTags } = useTagStore()
+  const { assignments: schoolAssignments, classes: schoolClasses, fetchAssignments: fetchSchoolAssignments } = useSchoolStore()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const [selectedView, setSelectedView] = useState({ type: 'inbox' })
   const [collapsedFolders, setCollapsedFolders] = useState(new Set())
@@ -73,8 +78,24 @@ export default function Tasks() {
       fetchHeaders(user.id)
       fetchTags(user.id)
       fetchTaskTags(user.id)
+      fetchSchoolAssignments(user.id)
     }
   }, [user])
+
+  // Activate view from URL param (sidebar Quick nav / tag clicks)
+  useEffect(() => {
+    const tagId = searchParams.get('tag')
+    const view = searchParams.get('view')
+    if (tagId) {
+      setSelectedView({ type: 'tag', id: tagId })
+    } else if (view === 'today') {
+      setSelectedView({ type: 'today' })
+    } else if (view === 'upcoming') {
+      setSelectedView({ type: 'upcoming' })
+    } else if (view === 'inbox') {
+      setSelectedView({ type: 'inbox' })
+    }
+  }, [searchParams])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -395,6 +416,28 @@ export default function Tasks() {
             <Inbox size={11} />
             Inbox
           </button>
+          <button
+            onClick={() => setSelectedView({ type: 'today' })}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedView.type === 'today'
+                ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            <Star size={11} />
+            Today
+          </button>
+          <button
+            onClick={() => setSelectedView({ type: 'upcoming' })}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedView.type === 'upcoming'
+                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            <Clock size={11} />
+            Upcoming
+          </button>
           {lists.map(list => (
             <button
               key={list.id}
@@ -431,7 +474,19 @@ export default function Tasks() {
             <div className="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center">
               <CheckSquare size={15} className="text-teal-500" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Tasks
+              {selectedView.type === 'tag' && (() => {
+                const tag = tags.find(t => t.id === selectedView.id)
+                return tag ? <span className="font-normal text-gray-400 dark:text-gray-500"> · {tag.name}</span> : null
+              })()}
+              {selectedView.type === 'today' && (
+                <span className="font-normal text-gray-400 dark:text-gray-500"> · Today</span>
+              )}
+              {selectedView.type === 'upcoming' && (
+                <span className="font-normal text-gray-400 dark:text-gray-500"> · Upcoming</span>
+              )}
+            </h1>
           </div>
           <button onClick={() => setImportModalOpen(true)} className="btn-ghost text-xs flex items-center gap-1.5">
             <Upload size={13} /> Quick import
@@ -689,6 +744,172 @@ export default function Tasks() {
             )
           })()}
 
+          {/* ── Today view ───────────────────────────────────────────────── */}
+          {selectedView.type === 'today' && (() => {
+            const overdueTasks = activeTasks.filter(t =>
+              t.due_date && isPast(new Date(t.due_date)) && !isToday(new Date(t.due_date))
+            )
+            const todayTasks = activeTasks.filter(t =>
+              t.due_date && isToday(new Date(t.due_date))
+            )
+            const total = overdueTasks.length + todayTasks.length
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="flex items-center gap-2.5 text-[22px] font-medium text-gray-900 dark:text-gray-100">
+                      <Star size={18} className="text-amber-400" />
+                      Today
+                    </h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-[26px]">
+                      {format(new Date(), 'EEEE, MMMM d')}
+                      {total > 0 && ` · ${total} task${total !== 1 ? 's' : ''}`}
+                    </p>
+                  </div>
+                  <button onClick={() => openNewTask(null)} className="btn-ghost text-xs">
+                    <Plus size={13} /> Add task
+                  </button>
+                </div>
+
+                {total === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-gray-500 italic">Nothing due today. Great work!</p>
+                ) : (
+                  <div className="space-y-4">
+                    {overdueTasks.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-rose-500">Overdue</span>
+                          <div className="flex-1 h-px bg-rose-100 dark:bg-rose-900/30" />
+                          <span className="text-xs tabular-nums text-rose-400">{overdueTasks.length}</span>
+                        </div>
+                        <div className="card overflow-hidden">
+                          <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
+                            {overdueTasks.map(t => (
+                              <TaskRow key={t.id} task={t} listData={getListData(t)}
+                                onEdit={task => { setEditTask(task); setTaskModalOpen(true) }}
+                                onTagClick={tagId => setSelectedView({ type: 'tag', id: tagId })}
+                                showListName />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {todayTasks.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">Due today</span>
+                          <div className="flex-1 h-px bg-amber-100 dark:bg-amber-900/30" />
+                          <span className="text-xs tabular-nums text-amber-400">{todayTasks.length}</span>
+                        </div>
+                        <div className="card overflow-hidden">
+                          <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
+                            {todayTasks.map(t => (
+                              <TaskRow key={t.id} task={t} listData={getListData(t)}
+                                onEdit={task => { setEditTask(task); setTaskModalOpen(true) }}
+                                onTagClick={tagId => setSelectedView({ type: 'tag', id: tagId })}
+                                showListName />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* ── Upcoming view ─────────────────────────────────────────────── */}
+          {selectedView.type === 'upcoming' && (() => {
+            const cutoff = addDays(startOfDay(new Date()), 8)
+            const upcomingTasks = activeTasks.filter(t => {
+              if (!t.due_date) return false
+              const d = new Date(t.due_date)
+              return !isPast(d) && !isToday(d) && d < cutoff
+            })
+            const upcomingAssignments = schoolAssignments.filter(a => {
+              if (!a.due_date || a.completed) return false
+              const d = new Date(a.due_date)
+              return !isPast(d) && !isToday(d) && d < cutoff
+            })
+            const days = Array.from({ length: 7 }, (_, i) => addDays(startOfDay(new Date()), i + 1))
+            const total = upcomingTasks.length + upcomingAssignments.length
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="flex items-center gap-2.5 text-[22px] font-medium text-gray-900 dark:text-gray-100">
+                      <Clock size={18} className="text-blue-400" />
+                      Upcoming
+                    </h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-[26px]">
+                      Next 7 days
+                      {total > 0 && ` · ${total} item${total !== 1 ? 's' : ''}`}
+                    </p>
+                  </div>
+                </div>
+
+                {total === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-gray-500 italic">Nothing due in the next 7 days.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {days.map(day => {
+                      const dayTasks = upcomingTasks.filter(t => isSameDay(new Date(t.due_date), day))
+                      const dayAssignments = upcomingAssignments.filter(a => isSameDay(new Date(a.due_date), day))
+                      if (dayTasks.length === 0 && dayAssignments.length === 0) return null
+                      return (
+                        <div key={day.toISOString()}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                              {format(day, 'EEEE')}
+                            </span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{format(day, 'MMM d')}</span>
+                            <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                          </div>
+                          <div className="card overflow-hidden">
+                            <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
+                              {dayTasks.map(t => (
+                                <TaskRow key={t.id} task={t} listData={getListData(t)}
+                                  onEdit={task => { setEditTask(task); setTaskModalOpen(true) }}
+                                  onTagClick={tagId => setSelectedView({ type: 'tag', id: tagId })}
+                                  showListName />
+                              ))}
+                              {dayAssignments.map(a => {
+                                const cls = schoolClasses.find(c => c.id === a.class_id)
+                                return (
+                                  <div key={a.id} className="flex items-center gap-3 px-4 py-2.5">
+                                    <div className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+                                    <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                                      <span className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">
+                                        {a.title}
+                                      </span>
+                                      {cls && (
+                                        <span
+                                          className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0"
+                                          style={{ backgroundColor: (cls.color || '#6366f1') + '20', color: cls.color || '#6366f1' }}
+                                        >
+                                          {cls.name}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 font-medium flex-shrink-0">
+                                      <GraduationCap size={9} />
+                                      Assignment
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* ── Tag view ─────────────────────────────────────────────────── */}
           {selectedView.type === 'tag' && (() => {
             const tag = tags.find(t => t.id === selectedView.id)
@@ -697,13 +918,31 @@ export default function Tasks() {
               .filter(([, tIds]) => tIds.includes(tag.id))
               .map(([taskId]) => taskId)
             const tagTasks = activeTasks.filter(t => tagTaskIds.includes(t.id))
+
+            function clearTagFilter() {
+              setSelectedView({ type: 'inbox' })
+              navigate('/home/tasks', { replace: true })
+            }
+
             return (
               <div>
-                <div className="flex items-center mb-5">
-                  <h2 className="flex items-center gap-2.5 text-[22px] font-medium text-gray-900 dark:text-gray-100">
-                    <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                    {tag.name}
-                  </h2>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="flex items-center gap-2.5 text-[22px] font-medium text-gray-900 dark:text-gray-100">
+                      <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                      {tag.name}
+                    </h2>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-[26px]">
+                      {tagTasks.length} task{tagTasks.length !== 1 ? 's' : ''} tagged &ldquo;{tag.name}&rdquo;
+                    </p>
+                  </div>
+                  <button
+                    onClick={clearTagFilter}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <X size={11} />
+                    Clear filter
+                  </button>
                 </div>
                 {tagTasks.length === 0 ? (
                   <p className="text-sm text-gray-400 dark:text-gray-500 italic">

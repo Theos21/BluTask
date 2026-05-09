@@ -47,6 +47,7 @@ create table if not exists public.classes (
   color text not null default '#6366f1',
   teacher text,
   period text,
+  room text,
   created_at timestamptz default now()
 );
 
@@ -61,6 +62,7 @@ create table if not exists public.assignments (
   priority text not null default 'normal' check (priority in ('normal','important','urgent')),
   status text not null default 'todo' check (status in ('todo','inprogress','submitted','graded')),
   notes text,
+  checklist jsonb not null default '[]'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

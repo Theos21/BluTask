@@ -2,11 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 function applyTheme(theme) {
-  if (theme === 'system') {
-    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    document.documentElement.classList.toggle('dark', dark)
+  const prefersDark = theme === 'system'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+    : theme === 'dark'
+  document.documentElement.classList.toggle('dark', prefersDark)
+  if (prefersDark) {
+    document.documentElement.removeAttribute('data-theme')
   } else {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
+    document.documentElement.setAttribute('data-theme', 'light')
   }
 }
 

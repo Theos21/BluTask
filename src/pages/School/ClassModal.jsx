@@ -12,6 +12,7 @@ export default function ClassModal({ isOpen, onClose, editClass = null }) {
   const [color, setColor] = useState(editClass?.color || CLASS_COLORS[0].value)
   const [teacher, setTeacher] = useState(editClass?.teacher || '')
   const [period, setPeriod] = useState(editClass?.period || '')
+  const [room, setRoom] = useState(editClass?.room || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -20,7 +21,7 @@ export default function ClassModal({ isOpen, onClose, editClass = null }) {
     if (!name.trim()) return
     setSaving(true)
     setError('')
-    const payload = { name: name.trim(), color, teacher: teacher.trim(), period: period.trim() }
+    const payload = { name: name.trim(), color, teacher: teacher.trim(), period: period.trim(), room: room.trim() }
     let err
     if (editClass) {
       ;({ error: err } = await updateClass(editClass.id, payload))
@@ -69,6 +70,15 @@ export default function ClassModal({ isOpen, onClose, editClass = null }) {
               className="input-base"
             />
           </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Room number</label>
+          <input
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            placeholder="e.g. 204"
+            className="input-base"
+          />
         </div>
         {error && <p className="text-xs text-rose-500">{error}</p>}
         <div className="flex gap-2 pt-1">

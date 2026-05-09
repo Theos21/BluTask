@@ -1,9 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { Plus, GraduationCap, BookOpen, Calendar, FlaskConical, MoreHorizontal, Pencil, Trash2, Sparkles, Timer } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import {
+  Plus, GraduationCap, BookOpen, Calendar, FlaskConical,
+  Pencil, Trash2, Sparkles, Timer, GripVertical, ArrowUp, ArrowDown,
+} from 'lucide-react'
+import {
+  DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, arrayMove, rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { getColorByValue, TYPE_CATEGORIES, getTypeByValue } from '../../lib/constants'
+import { TYPE_CATEGORIES, getTypeByValue } from '../../lib/constants'
 import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 import ClassModal from './ClassModal'
@@ -18,6 +27,106 @@ const VIEWS = [
   { id: 'assessments', label: 'Upcoming Assessments', icon: FlaskConical },
 ]
 
+function SortableClassCard({
+  cls, editingOrder, isMobile, isFirst, isLast,
+  onMoveUp, onMoveDown, assignments, onEdit, onDelete, onAddAssignment,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cls.id })
+
+  const allClsAssign = assignments.filter((a) => a.class_id === cls.id)
+  const pending = allClsAssign.filter((a) => !a.completed).length
+  const done = allClsAssign.filter((a) => a.completed).length
+  const total = allClsAssign.length
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="class-card"
+      style={{
+        borderLeft: `3px solid ${cls.color}`,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="class-name">{cls.name}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px', marginTop: 5, fontSize: 11.5, color: 'var(--fg-3)' }}>
+            {cls.teacher && <span>{cls.teacher}</span>}
+            {cls.period && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 3, height: 3, borderRadius: 999, background: 'var(--fg-4)', display: 'inline-block' }} />
+                {cls.period}
+              </span>
+            )}
+            {cls.room && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 3, height: 3, borderRadius: 999, background: 'var(--fg-4)', display: 'inline-block' }} />
+                Room {cls.room}
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 2, flexShrink: 0, marginTop: -2, alignItems: 'center' }}>
+          {editingOrder && (
+            isMobile ? (
+              <>
+                <button onClick={onMoveUp} disabled={isFirst} className="icon-btn ghost" title="Move up">
+                  <ArrowUp size={11} />
+                </button>
+                <button onClick={onMoveDown} disabled={isLast} className="icon-btn ghost" title="Move down">
+                  <ArrowDown size={11} />
+                </button>
+              </>
+            ) : (
+              <button
+                {...listeners}
+                {...attributes}
+                className="icon-btn ghost"
+                style={{ cursor: 'grab', touchAction: 'none' }}
+                title="Drag to reorder"
+              >
+                <GripVertical size={12} />
+              </button>
+            )
+          )}
+          <button className="icon-btn ghost" title="Edit class" onClick={onEdit}>
+            <Pencil size={12} />
+          </button>
+          <button className="icon-btn ghost" title="Delete class" style={{ color: 'var(--fg-3)' }} onClick={onDelete}>
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+
+      <div className="class-meta">
+        <span><b>{pending}</b> pending</span>
+        {done > 0 && <span><b>{done}</b> done</span>}
+        {total === 0 && <span style={{ fontStyle: 'italic' }}>No assignments yet</span>}
+      </div>
+
+      {total > 0 && (
+        <div className="class-progress">
+          <div className="class-progress-fill" style={{ width: `${pct}%`, background: cls.color }} />
+        </div>
+      )}
+
+      <button
+        onClick={onAddAssignment}
+        style={{
+          marginTop: 10, display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 11, fontWeight: 500, color: cls.color,
+          background: 'none', border: 0, cursor: 'pointer', padding: 0,
+        }}
+      >
+        <Plus size={11} /> Add assignment
+      </button>
+    </div>
+  )
+}
+
 export default function School() {
   const { user } = useAuthStore()
   const { classes, assignments, fetchClasses, fetchAssignments, deleteClass } = useSchoolStore()
@@ -27,9 +136,6 @@ export default function School() {
   const [editClass, setEditClass] = useState(null)
   const [editAssignment, setEditAssignment] = useState(null)
   const [defaultClassId, setDefaultClassId] = useState(null)
-  const [classMenuOpen, setClassMenuOpen] = useState(null)
-  const [classMenuPos, setClassMenuPos] = useState(null)
-  const classMenuContentRef = useRef(null)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [typeFilter, setTypeFilter] = useState('all')
   const [studyModeOpen, setStudyModeOpen] = useState(false)
@@ -37,21 +143,87 @@ export default function School() {
   const [studyAssignment, setStudyAssignment] = useState(null)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState(null)
 
+  const [sortMode, setSortMode] = useState('period')
+  const [editingOrder, setEditingOrder] = useState(false)
+  const [classOrder, setClassOrder] = useState(() => {
+    try {
+      const key = user ? `blutask-class-order-${user.id}` : null
+      return key ? JSON.parse(localStorage.getItem(key) || '[]') : []
+    } catch { return [] }
+  })
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 860)
+
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < 860)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+
+  useEffect(() => {
+    if (!classes.length) return
+    setClassOrder((prev) => {
+      const existingSet = new Set(prev)
+      const newIds = classes.map((c) => c.id).filter((id) => !existingSet.has(id))
+      const pruned = prev.filter((id) => classes.some((c) => c.id === id))
+      return newIds.length > 0 || pruned.length !== prev.length ? [...pruned, ...newIds] : prev
+    })
+  }, [classes])
+
+  useEffect(() => {
+    if (!user || sortMode !== 'custom' || !classOrder.length) return
+    localStorage.setItem(`blutask-class-order-${user.id}`, JSON.stringify(classOrder))
+  }, [classOrder, user, sortMode])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } }),
+  )
+
+  const sortedClasses = useMemo(() => {
+    if (sortMode === 'period') {
+      return [...classes].sort((a, b) => {
+        const pa = parseInt(a.period) || 999
+        const pb = parseInt(b.period) || 999
+        return pa !== pb ? pa - pb : a.name.localeCompare(b.name)
+      })
+    }
+    if (sortMode === 'alpha') {
+      return [...classes].sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return [...classes].sort((a, b) => {
+      const ia = classOrder.indexOf(a.id)
+      const ib = classOrder.indexOf(b.id)
+      if (ia === -1 && ib === -1) return 0
+      if (ia === -1) return 1
+      if (ib === -1) return -1
+      return ia - ib
+    })
+  }, [classes, sortMode, classOrder])
+
+  function handleDragEnd({ active, over }) {
+    if (!over || active.id === over.id) return
+    setClassOrder((prev) => {
+      const from = prev.indexOf(active.id)
+      const to = prev.indexOf(over.id)
+      return from === -1 || to === -1 ? prev : arrayMove(prev, from, to)
+    })
+  }
+
+  function moveCard(id, delta) {
+    setClassOrder((prev) => {
+      const idx = prev.indexOf(id)
+      const next = idx + delta
+      if (idx === -1 || next < 0 || next >= prev.length) return prev
+      return arrayMove(prev, idx, next)
+    })
+  }
+
   useEffect(() => {
     if (user) {
       fetchClasses(user.id)
       fetchAssignments(user.id)
     }
   }, [user])
-
-  useEffect(() => {
-    if (!classMenuOpen) return
-    function handle(e) {
-      if (!classMenuContentRef.current?.contains(e.target)) setClassMenuOpen(null)
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [classMenuOpen])
 
   function openNewAssignment(classId = null) {
     setEditAssignment(null)
@@ -78,89 +250,67 @@ export default function School() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-4 md:px-8 md:pt-8 md:pb-6 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-              <GraduationCap size={18} className="text-indigo-500" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">School</h1>
+    <div className="page" style={{ maxWidth: 1200 }}>
+      <div className="page-head">
+        <div>
+          <div className="crumbs">
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: 'oklch(0.72 0.14 295)', display: 'inline-block' }} />
+            <span>School</span>
           </div>
-          <div className="flex items-center gap-1 flex-wrap">
-            <button
-              onClick={() => { setEditClass(null); setClassModalOpen(true) }}
-              className="btn-ghost text-xs"
-            >
-              <Plus size={14} />
-              <span className="hidden sm:inline">New class</span>
-            </button>
-            <button
-              onClick={() => setImportModalOpen(true)}
-              disabled={classes.length === 0}
-              className="hidden md:inline-flex btn-ghost text-xs items-center gap-1"
-            >
-              <Sparkles size={13} />
-              Quick import
-            </button>
-            <button
-              onClick={() => { setStudyClass(null); setStudyAssignment(null); setStudyModeOpen(true) }}
-              className="hidden md:inline-flex btn-ghost text-xs items-center gap-1"
-            >
-              <Timer size={13} />
-              Study mode
-            </button>
-            <button
-              onClick={() => openNewAssignment()}
-              className="btn-primary text-xs"
-              disabled={classes.length === 0}
-            >
-              <Plus size={14} />
-              <span className="hidden sm:inline">Add assignment</span>
-            </button>
+          <h1>School</h1>
+          <div className="page-sub">
+            <span><b>{classes.length}</b> classes</span>
+            {sortedAssignments.length > 0 && (
+              <><span className="sep" /><span><b>{sortedAssignments.length}</b> upcoming</span></>
+            )}
           </div>
         </div>
-
-        {/* View tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
-          <div className="flex gap-1">
-            {VIEWS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setView(id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  view === id
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                <Icon size={13} />
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-          <div className="flex gap-1">
-            {TYPE_CATEGORIES.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setTypeFilter(id)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  typeFilter === id
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="page-head-right">
+          <button onClick={() => { setEditClass(null); setClassModalOpen(true) }} className="btn-ghost">
+            <Plus size={14} />
+            <span>New class</span>
+          </button>
+          <button
+            onClick={() => setImportModalOpen(true)}
+            disabled={classes.length === 0}
+            className="btn-ghost"
+            style={{ display: classes.length === 0 ? 'none' : undefined }}
+          >
+            <Sparkles size={13} />
+            Import
+          </button>
+          <button
+            onClick={() => { setStudyClass(null); setStudyAssignment(null); setStudyModeOpen(true) }}
+            className="btn-ghost"
+          >
+            <Timer size={13} />
+            Study
+          </button>
+          <button onClick={() => openNewAssignment()} className="btn-primary" disabled={classes.length === 0}>
+            <Plus size={14} />
+            Add assignment
+          </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
+      <div className="toolbar" style={{ marginBottom: 20 }}>
+        <div className="seg">
+          {VIEWS.map(({ id, label }) => (
+            <button key={id} onClick={() => setView(id)} className={`seg-btn${view === id ? ' on' : ''}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="seg">
+          {TYPE_CATEGORIES.map(({ id, label }) => (
+            <button key={id} onClick={() => setTypeFilter(id)} className={`seg-btn${typeFilter === id ? ' on' : ''}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
         {classes.length === 0 ? (
           <EmptyState
             icon={GraduationCap}
@@ -176,89 +326,106 @@ export default function School() {
         ) : (
           <>
             {view === 'byclass' && (
-              <div className="space-y-6">
-                {classes.map((cls) => {
-                  const colorObj = getColorByValue(cls.color)
-                  const clsAssignments = applyTypeFilter(sortedAssignments.filter((a) => a.class_id === cls.id))
-                  return (
-                    <div key={cls.id} className="card overflow-hidden">
-                      {/* Class header */}
-                      <div
-                        className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800"
-                        style={{ borderLeftColor: cls.color, borderLeftWidth: 3 }}
+              <div>
+                {/* Sort toolbar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 500 }}>Sort:</span>
+                  <select
+                    value={sortMode}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setSortMode(val)
+                      setEditingOrder(val === 'custom')
+                    }}
+                    style={{
+                      fontSize: 11, padding: '3px 8px', borderRadius: 6,
+                      border: '1px solid var(--border)', background: 'var(--bg-2)',
+                      color: 'var(--fg)', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="period">By Period</option>
+                    <option value="alpha">A–Z</option>
+                    <option value="custom">Custom Order</option>
+                  </select>
+                  {sortMode === 'custom' && editingOrder && (
+                    <>
+                      <span style={{ fontSize: 10, color: 'var(--fg-4)' }}>
+                        {isMobile ? 'Use arrows to reorder' : 'Drag cards to reorder'}
+                      </span>
+                      <button
+                        onClick={() => setEditingOrder(false)}
+                        className="btn-ghost"
+                        style={{ fontSize: 11, padding: '3px 10px', height: 'auto' }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: cls.color }}
-                          />
-                          <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                            {cls.name}
-                          </span>
-                          {cls.teacher && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">· {cls.teacher}</span>
-                          )}
-                          {cls.period && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">· {cls.period}</span>
-                          )}
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
-                            {clsAssignments.length} assignment{clsAssignments.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => openNewAssignment(cls.id)}
-                            className="btn-ghost text-xs py-1"
-                          >
-                            <Plus size={13} />
-                            Add
-                          </button>
-                          <div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (classMenuOpen === cls.id) { setClassMenuOpen(null); return }
-                                const rect = e.currentTarget.getBoundingClientRect()
-                                const menuH = 72
-                                const top = rect.bottom + 4 + menuH > window.innerHeight ? rect.top - menuH - 4 : rect.bottom + 4
-                                setClassMenuPos({ top, right: window.innerWidth - rect.right })
-                                setClassMenuOpen(cls.id)
-                              }}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            >
-                              <MoreHorizontal size={14} />
-                            </button>
-                            {classMenuOpen === cls.id && classMenuPos && createPortal(
-                              <div
-                                ref={classMenuContentRef}
-                                style={{ position: 'fixed', top: classMenuPos.top, right: classMenuPos.right, zIndex: 9999 }}
-                                className="w-32 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl py-1"
-                              >
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setEditClass(cls); setClassModalOpen(true); setClassMenuOpen(null) }}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2"
-                                >
-                                  <Pencil size={12} /> Edit
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setDeleteClassConfirm(cls); setClassMenuOpen(null) }}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-2"
-                                >
-                                  <Trash2 size={12} /> Delete
-                                </button>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        Done
+                      </button>
+                    </>
+                  )}
+                  {sortMode === 'custom' && !editingOrder && (
+                    <button
+                      onClick={() => setEditingOrder(true)}
+                      className="btn-ghost"
+                      style={{ fontSize: 11, padding: '3px 8px', height: 'auto' }}
+                    >
+                      Edit order
+                    </button>
+                  )}
+                </div>
 
-                      {/* Assignments */}
-                      {clsAssignments.length === 0 ? (
-                        <div className="px-4 py-6 text-center">
-                          <p className="text-xs text-gray-400 dark:text-gray-500">No assignments yet</p>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={sortedClasses.map((c) => c.id)} strategy={rectSortingStrategy}>
+                    <div className="class-grid">
+                      {sortedClasses.map((cls, idx) => (
+                        <SortableClassCard
+                          key={cls.id}
+                          cls={cls}
+                          editingOrder={editingOrder}
+                          isMobile={isMobile}
+                          isFirst={idx === 0}
+                          isLast={idx === sortedClasses.length - 1}
+                          onMoveUp={() => moveCard(cls.id, -1)}
+                          onMoveDown={() => moveCard(cls.id, 1)}
+                          assignments={assignments}
+                          onEdit={(e) => { e.stopPropagation(); setEditClass(cls); setClassModalOpen(true) }}
+                          onDelete={(e) => { e.stopPropagation(); setDeleteClassConfirm(cls) }}
+                          onAddAssignment={() => openNewAssignment(cls.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
+                {sortedAssignments.length > 0 && (
+                  <div className="group-head" style={{ marginBottom: 16, marginTop: 28 }}>
+                    <h3>Assignments</h3>
+                    <div className="group-rule" />
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {sortedClasses.map((cls) => {
+                    const clsAssignments = applyTypeFilter(sortedAssignments.filter((a) => a.class_id === cls.id))
+                    if (clsAssignments.length === 0) return null
+                    return (
+                      <div key={cls.id} className="card overflow-hidden">
+                        <div
+                          className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800"
+                          style={{ borderLeftColor: cls.color, borderLeftWidth: 3 }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{cls.name}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              {clsAssignments.length} assignment{clsAssignments.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <button onClick={() => openNewAssignment(cls.id)} className="btn-ghost text-xs py-1">
+                            <Plus size={13} /> Add
+                          </button>
                         </div>
-                      ) : (
                         <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
                           {clsAssignments.map((a) => (
                             <AssignmentRow
@@ -270,10 +437,10 @@ export default function School() {
                             />
                           ))}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 
@@ -331,25 +498,25 @@ export default function School() {
         editAssignment={editAssignment}
         defaultClassId={defaultClassId}
       />
-    <SmartImportModal
-      isOpen={importModalOpen}
-      onClose={() => setImportModalOpen(false)}
-    />
-    {studyModeOpen && (
-      <StudyMode
-        onClose={() => setStudyModeOpen(false)}
-        currentClass={studyClass}
-        currentAssignment={studyAssignment}
+      <SmartImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
       />
-    )}
-    <ConfirmDeleteModal
-      isOpen={!!deleteClassConfirm}
-      onClose={() => setDeleteClassConfirm(null)}
-      onConfirm={() => deleteClass(deleteClassConfirm.id)}
-      title={`Delete ${deleteClassConfirm?.name}?`}
-      description={`This will permanently delete all assignments in this class. This cannot be undone.`}
-      confirmLabel="Delete class"
-    />
+      {studyModeOpen && (
+        <StudyMode
+          onClose={() => setStudyModeOpen(false)}
+          currentClass={studyClass}
+          currentAssignment={studyAssignment}
+        />
+      )}
+      <ConfirmDeleteModal
+        isOpen={!!deleteClassConfirm}
+        onClose={() => setDeleteClassConfirm(null)}
+        onConfirm={() => deleteClass(deleteClassConfirm.id)}
+        title={`Delete ${deleteClassConfirm?.name}?`}
+        description="This will permanently delete all assignments in this class. This cannot be undone."
+        confirmLabel="Delete class"
+      />
     </div>
   )
 }

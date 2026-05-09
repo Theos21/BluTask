@@ -1,27 +1,55 @@
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/sidebar'
+import { Menu, Sun, Moon } from 'lucide-react'
 import AppSidebar from './Sidebar'
 import UpdaterBanner from '../UpdaterBanner'
+import { useAppStore } from '../../stores/useAppStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { useTagStore } from '../../stores/useTagStore'
 
 export default function AppLayout() {
   const { pathname } = useLocation()
+  const { theme, toggleTheme } = useAppStore()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { user } = useAuthStore()
+  const { fetchTags, fetchTaskTags } = useTagStore()
+
+  // Fetch tags globally so the sidebar always has tag data regardless of which page is active
+  useEffect(() => {
+    if (!user) return
+    fetchTags(user.id)
+    fetchTaskTags(user.id)
+  }, [user])
+
   return (
-    <SidebarProvider defaultOpen={true}>
-      <AppSidebar />
-      <SidebarInset className="h-svh overflow-hidden bg-[#fafbfc] dark:bg-[#0d1117] flex flex-col">
-        {/* Mobile top bar — hidden on md+ */}
-        <div className="flex md:hidden items-center px-4 h-14 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0 relative">
-          <SidebarTrigger className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
-          <span className="absolute left-1/2 -translate-x-1/2 text-[17px] tracking-tight leading-none select-none pointer-events-none">
-            <span className="font-bold" style={{ color: '#1a56db' }}>Blu</span>
-            <span className="font-normal text-gray-700 dark:text-gray-200">Task</span>
+    <div className="app">
+      {/* Mobile top bar — hidden on 860px+ */}
+      <div className="mobile-bar">
+        <button className="icon-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+          <Menu size={18} />
+        </button>
+        <div className="mobile-brand">
+          <span className="brand-name sm">
+            <span className="brand-blu">Blu</span>
+            <span className="brand-task">Task</span>
           </span>
         </div>
-        <div key={pathname} className="flex-1 flex flex-col page-enter min-h-0 overflow-hidden">
+        <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </div>
+
+      <div className={`shell${mobileOpen ? ' mobile-open' : ''}`}>
+        <AppSidebar onClose={() => setMobileOpen(false)} />
+        {mobileOpen && (
+          <div className="mobile-scrim" onClick={() => setMobileOpen(false)} />
+        )}
+        <div key={pathname} className="content page-enter">
           <Outlet />
         </div>
-      </SidebarInset>
+      </div>
+
       <UpdaterBanner />
-    </SidebarProvider>
+    </div>
   )
 }

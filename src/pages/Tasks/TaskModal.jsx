@@ -53,7 +53,7 @@ export default function TaskModal({
       setPriority(editTask.priority || 'normal')
       setRepeatRule(editTask.repeat_rule || '')
       setNotes(editTask.notes || '')
-      setReminderAt(editTask.reminder_at || null)
+      setReminderAt(null)
       setSelectedTagIds(taskTags[editTask.id] ? [...taskTags[editTask.id]] : [])
       fetchChecklistItems(editTask.id).then(() => {
         const items = checklistItems[editTask.id] || []
@@ -141,7 +141,6 @@ export default function TaskModal({
       priority,
       repeat_rule: repeatRule || null,
       notes: notes.trim(),
-      reminder_at: reminderAt || null,
       completed: editTask?.completed ?? false,
     }
 
@@ -249,7 +248,7 @@ export default function TaskModal({
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes… (supports **bold**, *italic*, `code`, - lists)"
+              placeholder="Optional notes… (*italic*, **bold**, `code`, - list)"
               rows={2}
               className="input-base resize-none"
             />

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#242938"/>
+      <stop offset="100%" stop-color="#1a1f2e"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7aabf0"/>
+      <stop offset="100%" stop-color="#4d7ed4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow accent top-left -->
+  <radialGradient id="glow" cx="30%" cy="25%" r="50%" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="#4d7ed4" stop-opacity="0.12"/>
+    <stop offset="100%" stop-color="#4d7ed4" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#glow)"/>
+
+  <!-- Row 1: completed task — check circle + faded line -->
+  <!-- Circle -->
+  <circle cx="224" cy="326" r="56" fill="url(#blue)"/>
+  <!-- Check mark inside -->
+  <path d="M 196 326 L 218 350 L 260 296" fill="none" stroke="#1a1f2e" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text line (faded, strikethrough style) -->
+  <rect x="322" y="300" width="450" height="52" rx="26" fill="url(#blue)" opacity="0.30"/>
+  <!-- Strike line -->
+  <line x1="322" y1="326" x2="772" y2="326" stroke="url(#blue)" stroke-width="4" opacity="0.35"/>
+
+  <!-- Row 2: active task — empty circle + bright line -->
+  <circle cx="224" cy="512" r="56" fill="none" stroke="url(#blue)" stroke-width="44"/>
+  <rect x="322" y="486" width="410" height="52" rx="26" fill="url(#blue)"/>
+
+  <!-- Row 3: upcoming task — empty circle (muted) + short muted line -->
+  <circle cx="224" cy="698" r="56" fill="none" stroke="url(#blue)" stroke-width="44" opacity="0.35"/>
+  <rect x="322" y="672" width="290" height="52" rx="26" fill="url(#blue)" opacity="0.25"/>
+</svg>

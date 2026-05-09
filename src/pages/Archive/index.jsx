@@ -37,48 +37,48 @@ function SpacePill({ space }) {
 
 function ArchiveRow({ item, onUndo }) {
   const typeObj = item.type ? getTypeByValue(item.type) : null
+  const accentColor = item.space === 'school' ? 'oklch(0.72 0.14 295)' : 'oklch(0.72 0.14 150)'
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
-      <CheckCircle2
-        size={16}
-        className="flex-shrink-0"
-        style={{ color: item.space === 'school' ? '#6366f1' : '#14b8a6' }}
-      />
-
-      <span className="flex-1 text-sm text-gray-500 dark:text-gray-400 line-through truncate">
-        {item.title}
-      </span>
-
-      {item.space === 'school' ? (
-        <>
-          {item.classColor && (
-            <ColorPill color={item.classColor} name={item.context || ''} size="xs" />
-          )}
-          {typeObj && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium capitalize flex-shrink-0 hidden sm:block ${TYPE_PILL_STYLES[typeObj.category] || TYPE_PILL_STYLES.general}`}>
-              {typeObj.label}
-            </span>
-          )}
-        </>
-      ) : (
-        <>
-          <SpacePill space={item.space} />
+    <div className="task task-done" style={{ cursor: 'default' }}>
+      <div className="task-grip" />
+      <div
+        className="cb cb-on"
+        style={{ background: accentColor, borderColor: accentColor }}
+      >
+        <span className="cb-inner">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12l5 5L20 7" />
+          </svg>
+        </span>
+      </div>
+      <div className="prio prio-low" />
+      <div className="task-main">
+        <div className="task-title">{item.title}</div>
+        <div className="task-meta">
           {item.context && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[100px] hidden sm:block">
+            <span className="meta-list">
+              {item.classColor && (
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: item.classColor, display: 'inline-block' }} />
+              )}
               {item.context}
             </span>
           )}
-        </>
-      )}
-
-      <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0 hidden sm:block">
-        {format(new Date(item.completed_at || item.updated_at), 'MMM d, h:mm a')}
-      </span>
-
+          {typeObj && (
+            <span style={{ fontSize: 10.5 }}>{typeObj.label}</span>
+          )}
+        </div>
+      </div>
+      <div
+        className="task-due done-time"
+        style={{ color: 'var(--fg-4)', background: 'transparent', border: 'none', fontSize: 11 }}
+      >
+        {format(new Date(item.completed_at || item.updated_at), 'MMM d')}
+      </div>
       <button
         onClick={() => onUndo(item)}
-        className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all flex-shrink-0"
+        className="row-more"
+        style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--fg-3)', background: 'none', border: 0 }}
       >
         <RotateCcw size={12} />
         Undo
@@ -179,75 +179,68 @@ export default function Archive() {
   ]
 
   return (
-    <div className="max-w-[1200px] mx-auto w-full h-full flex flex-col">
+    <div className="page" style={{ maxWidth: 1100 }}>
       {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <ArchiveIcon size={16} className="text-gray-500 dark:text-gray-400" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Archive</h1>
+      <div className="page-head">
+        <div>
+          <div className="crumbs">
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: 'oklch(0.55 0.04 250)', display: 'inline-block' }} />
+            <span>Archive</span>
           </div>
+          <h1>Archive</h1>
           {completedItems.length > 0 && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">
-              {weekCount} completed this week
-            </span>
+            <div className="page-sub">
+              <span className="muted">{weekCount} completed this week</span>
+            </div>
           )}
         </div>
-
         {/* Space filter tabs */}
-        <div className="flex gap-1">
-          {filterTabs.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setSpaceFilter(id)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                spaceFilter === id
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div className="seg">
+            {filterTabs.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setSpaceFilter(id)}
+                className={`seg-btn${spaceFilter === id ? ' on' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
-        {!hasAny ? (
-          <div className="flex flex-col items-center justify-center h-full text-center pb-16">
-            <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-              <ArchiveIcon size={22} className="text-gray-400 dark:text-gray-500" />
-            </div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Nothing archived yet</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 max-w-xs">
-              Completed tasks and assignments will appear here.
-            </p>
+      {!hasAny ? (
+        <div className="ds-empty" style={{ marginTop: 24 }}>
+          <div className="ds-empty-mark">
+            <ArchiveIcon size={22} />
           </div>
-        ) : (
-          <div className="space-y-6">
-            {groupOrder.map((label) => {
-              const items = groups[label]
-              if (!items || items.length === 0) return null
-              return (
-                <div key={label}>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-                    {label}
-                  </p>
-                  <div className="card overflow-hidden divide-y divide-gray-50 dark:divide-gray-800/60">
-                    {items.map((item) => (
-                      <ArchiveRow key={`${item.space}-${item.id}`} item={item} onUndo={handleUndo} />
-                    ))}
-                  </div>
+          <div className="ds-empty-title">Nothing archived yet</div>
+          <div className="ds-empty-sub">Completed tasks and assignments will appear here.</div>
+        </div>
+      ) : (
+        <div className="task-body">
+          {groupOrder.map((label) => {
+            const items = groups[label]
+            if (!items || items.length === 0) return null
+            return (
+              <div className="task-group" key={label}>
+                <div className="group-head">
+                  <h3>{label}</h3>
+                  <span className="group-count">{items.length}</span>
+                  <div className="group-rule" />
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+                <div className="task-list">
+                  {items.map((item) => (
+                    <ArchiveRow key={`${item.space}-${item.id}`} item={item} onUndo={handleUndo} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
