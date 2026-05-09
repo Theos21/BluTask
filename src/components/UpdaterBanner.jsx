@@ -8,7 +8,7 @@ const API_URL = 'https://api.github.com/repos/Theos21/BluTask/releases/latest'
 const STORAGE_KEY = 'blutask_update_check'
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
 
-function isNewer(latest, current) {
+export function isNewer(latest, current) {
   const parse = v => v.replace(/^v/, '').split('.').map(Number)
   const [la, lb, lc] = parse(latest)
   const [ca, cb, cc] = parse(current)
@@ -17,43 +17,53 @@ function isNewer(latest, current) {
   return lc > cc
 }
 
+export async function runUpdateCheck({ force = false } = {}) {
+  const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
+  if (!isTauri) return { skipped: true }
+
+  let stored = {}
+  try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') } catch { /* ignore */ }
+
+  const alreadyDismissed = stored.dismissedVersion && stored.latestVersion &&
+    stored.dismissedVersion === stored.latestVersion
+  const cacheStillFresh = stored.checkedAt && Date.now() - stored.checkedAt < CHECK_INTERVAL_MS
+
+  if (!force && cacheStillFresh && stored.latestVersion) {
+    if (!alreadyDismissed && isNewer(stored.latestVersion, CURRENT_VERSION)) {
+      return { available: true, version: stored.latestVersion, fromCache: true }
+    }
+    return { available: false, fromCache: true }
+  }
+
+  try {
+    const response = await fetch(API_URL, { headers: { Accept: 'application/vnd.github+json' } })
+    const data = await response.json()
+    const latest = (data.tag_name ?? '').replace(/^v/, '')
+    if (!latest) return { available: false }
+
+    const updated = { ...stored, checkedAt: Date.now(), latestVersion: latest }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+    if (isNewer(latest, CURRENT_VERSION)) {
+      const wasDismissed = stored.dismissedVersion === latest
+      return { available: true, version: latest, dismissed: wasDismissed }
+    }
+    return { available: false }
+  } catch {
+    return { available: false }
+  }
+}
+
 export default function UpdaterBanner() {
   const [latestVersion, setLatestVersion] = useState(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    // Web users always have the latest — only relevant for the desktop installer
-    if (!window.__TAURI_INTERNALS__ && !window.__TAURI__) return
-
-    let stored = {}
-    try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') } catch { /* ignore */ }
-
-    // Don't re-show a version the user already dismissed
-    const alreadyDismissed = stored.dismissedVersion && stored.latestVersion &&
-      stored.dismissedVersion === stored.latestVersion
-
-    const cacheStillFresh = stored.checkedAt && Date.now() - stored.checkedAt < CHECK_INTERVAL_MS
-
-    if (cacheStillFresh && stored.latestVersion) {
-      if (!alreadyDismissed && isNewer(stored.latestVersion, CURRENT_VERSION)) {
-        setLatestVersion(stored.latestVersion)
+    runUpdateCheck().then(result => {
+      if (result?.available && !result?.dismissed) {
+        setLatestVersion(result.version)
       }
-      return
-    }
-
-    fetch(API_URL, { headers: { Accept: 'application/vnd.github+json' } })
-      .then(r => r.json())
-      .then(data => {
-        const latest = (data.tag_name ?? '').replace(/^v/, '')
-        if (!latest) return
-        const updated = { ...stored, checkedAt: Date.now(), latestVersion: latest }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-        const wasDismissed = stored.dismissedVersion === latest
-        if (!wasDismissed && isNewer(latest, CURRENT_VERSION)) {
-          setLatestVersion(latest)
-        }
-      })
-      .catch(() => {}) // silent — this is a convenience feature, not critical
+    })
   }, [])
 
   function handleDismiss() {
@@ -85,10 +95,7 @@ export default function UpdaterBanner() {
         </button>
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={handleDismiss}
-          className="flex-1 btn-ghost text-xs py-1.5 justify-center"
-        >
+        <button onClick={handleDismiss} className="flex-1 btn-ghost text-xs py-1.5 justify-center">
           Later
         </button>
         <button

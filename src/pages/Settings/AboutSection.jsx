@@ -1,10 +1,11 @@
 /* global __APP_VERSION__ */
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink, RefreshCw, CheckCircle, Download } from 'lucide-react'
+import { runUpdateCheck, isNewer } from '../../components/UpdaterBanner'
 
-// Injected by Vite at build time from src-tauri/tauri.conf.json
 const VERSION = __APP_VERSION__
+const RELEASES_PAGE = 'https://github.com/Theos21/BluTask/releases/latest'
 
 const CHANGELOG = [
   {
@@ -90,9 +91,38 @@ function ChangelogModal({ onClose }) {
   )
 }
 
-
 export default function AboutSection() {
   const [changelogOpen, setChangelogOpen] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [updateStatus, setUpdateStatus] = useState(null) // null | 'up-to-date' | { version }
+
+  async function handleCheckForUpdates() {
+    setChecking(true)
+    setUpdateStatus(null)
+
+    // Try Tauri plugin updater first
+    const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
+    if (isTauri) {
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater')
+        const update = await check()
+        if (update) {
+          setUpdateStatus({ version: update.version })
+          setChecking(false)
+          return
+        }
+      } catch { /* fall through to GitHub API */ }
+    }
+
+    // GitHub API fallback
+    const result = await runUpdateCheck({ force: true })
+    if (result?.available) {
+      setUpdateStatus({ version: result.version })
+    } else {
+      setUpdateStatus('up-to-date')
+    }
+    setChecking(false)
+  }
 
   return (
     <div className="space-y-8">
@@ -137,6 +167,33 @@ export default function AboutSection() {
             className="text-xs text-[color:var(--color-accent)] hover:underline flex items-center gap-1"
           >
             View changelog <ExternalLink size={10} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-600 dark:text-gray-400">Updates</span>
+            {!checking && updateStatus === 'up-to-date' && (
+              <span className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400">
+                <CheckCircle size={11} /> You're up to date
+              </span>
+            )}
+            {!checking && updateStatus && updateStatus !== 'up-to-date' && (
+              <span className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                <Download size={11} />
+                v{updateStatus.version} available —{' '}
+                <button onClick={() => window.open(RELEASES_PAGE, '_blank')} className="underline hover:no-underline">
+                  Download
+                </button>
+              </span>
+            )}
+          </div>
+          <button
+            onClick={handleCheckForUpdates}
+            disabled={checking}
+            className="flex items-center gap-1.5 text-xs text-[color:var(--color-accent)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={11} className={checking ? 'animate-spin' : ''} />
+            {checking ? 'Checking…' : 'Check for updates'}
           </button>
         </div>
       </div>
