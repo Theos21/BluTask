@@ -91,7 +91,11 @@ export default function AppSidebar({ onClose }) {
     || profile?.full_name?.split(' ')[0]
     || user?.email?.split('@')[0]
     || ''
-  const initials = firstName.slice(0, 2).toUpperCase() || 'BT'
+  const initials = (() => {
+    const parts = (profile?.full_name || '').trim().split(/\s+/)
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    return firstName.slice(0, 2).toUpperCase() || 'BT'
+  })()
 
   const activeTasks = tasks.filter(t => !t.completed)
   const inboxCount = activeTasks.filter(t => !t.list_id).length
