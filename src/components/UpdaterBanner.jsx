@@ -54,56 +54,166 @@ export async function runUpdateCheck({ force = false } = {}) {
   }
 }
 
+// phase: null | 'available' | 'downloading' | 'installing' | 'done' | 'error'
 export default function UpdaterBanner() {
-  const [latestVersion, setLatestVersion] = useState(null)
+  const [phase, setPhase] = useState(null)
+  const [version, setVersion] = useState(null)
+  const [updateObj, setUpdateObj] = useState(null)
+  const [errorMsg, setErrorMsg] = useState(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    runUpdateCheck().then(result => {
+    const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
+    if (!isTauri) return
+
+    ;(async () => {
+      // Prefer the Tauri plugin — it gives us an installable update object
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater')
+        const update = await check()
+        if (update) {
+          let stored = {}
+          try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') } catch { /* ignore */ }
+          if (stored.dismissedVersion === update.version) return
+          setUpdateObj(update)
+          setVersion(update.version)
+          setPhase('available')
+          return
+        }
+      } catch { /* plugin unavailable, fall through */ }
+
+      // GitHub API fallback — detection only, no in-app install
+      const result = await runUpdateCheck()
       if (result?.available && !result?.dismissed) {
-        setLatestVersion(result.version)
+        setVersion(result.version)
+        setPhase('available')
       }
-    })
+    })()
   }, [])
 
-  function handleDismiss() {
+  function dismiss() {
     setDismissed(true)
-    try {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, dismissedVersion: latestVersion }))
-    } catch { /* ignore */ }
+    if (version) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, dismissedVersion: version }))
+      } catch { /* ignore */ }
+    }
   }
 
-  if (!latestVersion || dismissed) return null
+  async function handleInstall() {
+    if (!updateObj) {
+      // No installable update object — open releases page as fallback
+      window.open(RELEASES_PAGE, '_blank')
+      dismiss()
+      return
+    }
+
+    try {
+      setPhase('downloading')
+      setErrorMsg(null)
+      await updateObj.downloadAndInstall((event) => {
+        if (event.event === 'Finished') setPhase('installing')
+      })
+      setPhase('done')
+    } catch (err) {
+      const msg = err?.message || String(err) || 'Unknown error'
+      setErrorMsg(msg)
+      setPhase('error')
+    }
+  }
+
+  async function handleRestart() {
+    try {
+      const { relaunch } = await import('@tauri-apps/plugin-process')
+      await relaunch()
+    } catch {
+      setErrorMsg('Please close and reopen BluTask to apply the update.')
+      setPhase('error')
+    }
+  }
+
+  if (dismissed || phase === null) return null
 
   return (
     <div className="fixed bottom-5 right-5 z-50 w-80 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xl p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            BluTask v{latestVersion} is available
+            {phase === 'done'
+              ? 'Update ready to apply'
+              : phase === 'error'
+              ? 'Update failed'
+              : `BluTask v${version} available`}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            Download the latest version to get new features and fixes.
+            {phase === 'available' && (updateObj ? 'A new version is ready to install in the background.' : 'Download the latest version from the releases page.')}
+            {phase === 'downloading' && 'Downloading update…'}
+            {phase === 'installing' && 'Installing update…'}
+            {phase === 'done' && 'Restart BluTask to finish applying the update.'}
+            {phase === 'error' && (errorMsg || 'Something went wrong during the update.')}
           </p>
         </div>
-        <button
-          onClick={handleDismiss}
-          className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0 mt-0.5"
-        >
-          <X size={14} />
-        </button>
+        {(phase === 'available' || phase === 'error') && (
+          <button
+            onClick={dismiss}
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0 mt-0.5"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
+
       <div className="flex gap-2">
-        <button onClick={handleDismiss} className="flex-1 btn-ghost text-xs py-1.5 justify-center">
-          Later
-        </button>
-        <button
-          onClick={() => window.open(RELEASES_PAGE, '_blank')}
-          className="flex-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
-        >
-          Download
-        </button>
+        {phase === 'available' && (
+          <>
+            <button onClick={dismiss} className="flex-1 btn-ghost text-xs py-1.5 justify-center">
+              Later
+            </button>
+            <button
+              onClick={handleInstall}
+              className="flex-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
+            >
+              {updateObj ? 'Install update' : 'Download'}
+            </button>
+          </>
+        )}
+
+        {(phase === 'downloading' || phase === 'installing') && (
+          <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
+            <svg className="animate-spin w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            {phase === 'downloading' ? 'Downloading…' : 'Installing…'}
+          </div>
+        )}
+
+        {phase === 'done' && (
+          <button
+            onClick={handleRestart}
+            className="flex-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
+          >
+            Restart now
+          </button>
+        )}
+
+        {phase === 'error' && (
+          <>
+            <button onClick={dismiss} className="flex-1 btn-ghost text-xs py-1.5 justify-center">
+              Dismiss
+            </button>
+            <a
+              href={RELEASES_PAGE}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={dismiss}
+              className="flex-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors text-center"
+            >
+              Download manually
+            </a>
+          </>
+        )}
       </div>
     </div>
   )

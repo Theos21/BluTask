@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ExternalLink, RefreshCw, CheckCircle, Download } from 'lucide-react'
-import { runUpdateCheck, isNewer } from '../../components/UpdaterBanner'
+import { runUpdateCheck } from '../../components/UpdaterBanner'
 
 const VERSION = __APP_VERSION__
 const RELEASES_PAGE = 'https://github.com/Theos21/BluTask/releases/latest'
@@ -91,37 +91,72 @@ function ChangelogModal({ onClose }) {
   )
 }
 
+// updatePhase: null | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'installing' | 'done' | 'error'
 export default function AboutSection() {
   const [changelogOpen, setChangelogOpen] = useState(false)
-  const [checking, setChecking] = useState(false)
-  const [updateStatus, setUpdateStatus] = useState(null) // null | 'up-to-date' | { version }
+  const [updatePhase, setUpdatePhase] = useState(null)
+  const [availableVersion, setAvailableVersion] = useState(null)
+  const [updateObj, setUpdateObj] = useState(null)
+  const [updateError, setUpdateError] = useState(null)
 
   async function handleCheckForUpdates() {
-    setChecking(true)
-    setUpdateStatus(null)
+    setUpdatePhase('checking')
+    setAvailableVersion(null)
+    setUpdateObj(null)
+    setUpdateError(null)
 
-    // Try Tauri plugin updater first
     const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
     if (isTauri) {
       try {
         const { check } = await import('@tauri-apps/plugin-updater')
         const update = await check()
         if (update) {
-          setUpdateStatus({ version: update.version })
-          setChecking(false)
+          setUpdateObj(update)
+          setAvailableVersion(update.version)
+          setUpdatePhase('available')
           return
         }
+        setUpdatePhase('up-to-date')
+        return
       } catch { /* fall through to GitHub API */ }
     }
 
-    // GitHub API fallback
+    // GitHub API fallback (web or plugin unavailable)
     const result = await runUpdateCheck({ force: true })
     if (result?.available) {
-      setUpdateStatus({ version: result.version })
+      setAvailableVersion(result.version)
+      setUpdatePhase('available')
     } else {
-      setUpdateStatus('up-to-date')
+      setUpdatePhase('up-to-date')
     }
-    setChecking(false)
+  }
+
+  async function handleInstall() {
+    if (!updateObj) {
+      window.open(RELEASES_PAGE, '_blank')
+      return
+    }
+    try {
+      setUpdatePhase('downloading')
+      setUpdateError(null)
+      await updateObj.downloadAndInstall((event) => {
+        if (event.event === 'Finished') setUpdatePhase('installing')
+      })
+      setUpdatePhase('done')
+    } catch (err) {
+      setUpdateError(err?.message || String(err) || 'Unknown error')
+      setUpdatePhase('error')
+    }
+  }
+
+  async function handleRestart() {
+    try {
+      const { relaunch } = await import('@tauri-apps/plugin-process')
+      await relaunch()
+    } catch {
+      setUpdateError('Please close and reopen BluTask to apply the update.')
+      setUpdatePhase('error')
+    }
   }
 
   return (
@@ -169,32 +204,89 @@ export default function AboutSection() {
             View changelog <ExternalLink size={10} />
           </button>
         </div>
-        <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-800">
-          <div className="flex flex-col gap-1">
+        <div className="flex items-start justify-between gap-4 py-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex flex-col gap-1.5 min-w-0">
             <span className="text-xs text-gray-600 dark:text-gray-400">Updates</span>
-            {!checking && updateStatus === 'up-to-date' && (
+
+            {updatePhase === 'up-to-date' && (
               <span className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400">
                 <CheckCircle size={11} /> You're up to date
               </span>
             )}
-            {!checking && updateStatus && updateStatus !== 'up-to-date' && (
+
+            {updatePhase === 'available' && (
               <span className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
                 <Download size={11} />
-                v{updateStatus.version} available —{' '}
-                <button onClick={() => window.open(RELEASES_PAGE, '_blank')} className="underline hover:no-underline">
-                  Download
-                </button>
+                v{availableVersion} available
+              </span>
+            )}
+
+            {(updatePhase === 'downloading' || updatePhase === 'installing') && (
+              <span className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                <RefreshCw size={11} className="animate-spin" />
+                {updatePhase === 'downloading' ? 'Downloading update…' : 'Installing update…'}
+              </span>
+            )}
+
+            {updatePhase === 'done' && (
+              <span className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400">
+                <CheckCircle size={11} /> Ready — restart to apply
+              </span>
+            )}
+
+            {updatePhase === 'error' && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-red-500 dark:text-red-400">
+                  {updateError || 'Update failed'}
+                </span>
+                <a
+                  href={RELEASES_PAGE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-[color:var(--color-accent)] hover:underline"
+                >
+                  Download manually <ExternalLink size={10} />
+                </a>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {updatePhase === 'available' && (
+              <button
+                onClick={handleInstall}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+              >
+                <Download size={11} />
+                {updateObj ? 'Install' : 'Download'}
+              </button>
+            )}
+
+            {updatePhase === 'done' && (
+              <button
+                onClick={handleRestart}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+              >
+                Restart now
+              </button>
+            )}
+
+            {(updatePhase === null || updatePhase === 'up-to-date' || updatePhase === 'error') && (
+              <button
+                onClick={handleCheckForUpdates}
+                className="flex items-center gap-1.5 text-xs text-[color:var(--color-accent)] hover:underline"
+              >
+                <RefreshCw size={11} />
+                {updatePhase === 'error' ? 'Try again' : 'Check for updates'}
+              </button>
+            )}
+
+            {updatePhase === 'checking' && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                <RefreshCw size={11} className="animate-spin" /> Checking…
               </span>
             )}
           </div>
-          <button
-            onClick={handleCheckForUpdates}
-            disabled={checking}
-            className="flex items-center gap-1.5 text-xs text-[color:var(--color-accent)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw size={11} className={checking ? 'animate-spin' : ''} />
-            {checking ? 'Checking…' : 'Check for updates'}
-          </button>
         </div>
       </div>
 
