@@ -36,12 +36,20 @@ workflows:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
           npm run build
+          echo "=== Build output ==="
+          ls -la dist/ || echo "ERROR: dist/ directory not created"
 
       - name: Capacitor sync iOS
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
+          echo "=== Working dir ==="
+          pwd
+          echo "=== capacitor.config.json ==="
+          cat capacitor.config.json
+          echo "=== dist/ exists? ==="
+          ls dist/ | head -5
           cap sync ios
 
       - name: Resolve SPM packages
