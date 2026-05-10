@@ -71,13 +71,34 @@ workflows:
 
       - name: Install certificate and provisioning profile
         script: |
-          # Decode certificate
+          # --- Certificate ---
+          echo "=== CERTIFICATE_B64 length: ${#CERTIFICATE_B64} ==="
           echo "$CERTIFICATE_B64" | base64 --decode > /tmp/apple_dev.p12
           echo "=== p12 size: $(wc -c < /tmp/apple_dev.p12) bytes ==="
+          file /tmp/apple_dev.p12
 
-          # Decode provisioning profile
-          echo "$PROVISIONING_PROFILE_B64" | base64 --decode > /tmp/blutask_dev.mobileprovision
+          # --- Provisioning profile ---
+          echo "=== PROVISIONING_PROFILE_B64 length: ${#PROVISIONING_PROFILE_B64} ==="
+          echo "=== First 60 chars: ${PROVISIONING_PROFILE_B64:0:60} ==="
+          echo "=== Last  60 chars: ${PROVISIONING_PROFILE_B64: -60} ==="
+
+          # Decode — try ignoring unknown chars in case of line-break artefacts
+          echo "$PROVISIONING_PROFILE_B64" | base64 --decode --ignore-garbage > /tmp/blutask_dev.mobileprovision 2>/dev/null \
+            || echo "$PROVISIONING_PROFILE_B64" | base64 -d > /tmp/blutask_dev.mobileprovision
           echo "=== profile size: $(wc -c < /tmp/blutask_dev.mobileprovision) bytes ==="
+          file /tmp/blutask_dev.mobileprovision
+
+          # Verify UUID is extractable before continuing
+          PROFILE_UUID=$(security cms -D -i /tmp/blutask_dev.mobileprovision \
+            | grep -A1 '<key>UUID</key>' \
+            | grep '<string>' \
+            | sed 's/.*<string>\(.*\)<\/string>.*/\1/' \
+            | tr -d '[:space:]')
+          echo "=== Extracted UUID: '$PROFILE_UUID' ==="
+          if [ -z "$PROFILE_UUID" ]; then
+            echo "ERROR: UUID extraction failed — profile may be corrupt or env var truncated"
+            exit 1
+          fi
 
           # Install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
