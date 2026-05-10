@@ -187,6 +187,7 @@ workflows:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath /tmp/App.xcarchive \
+            -allowProvisioningUpdates \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=9FXRBZ9H3L
 
