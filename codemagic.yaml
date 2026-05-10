@@ -151,21 +151,7 @@ workflows:
 
       - name: Build IPA
         script: |
-          # Extract UUID from provisioning profile
-          PROFILE_UUID=$(security cms -D -i /tmp/blutask_dev.mobileprovision \
-            | grep -A1 '<key>UUID</key>' \
-            | grep '<string>' \
-            | sed 's/.*<string>\(.*\)<\/string>.*/\1/' \
-            | tr -d '[:space:]')
-          echo "=== Profile UUID: $PROFILE_UUID ==="
-
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "ERROR: Could not extract profile UUID — check PROVISIONING_PROFILE_B64 env var"
-            exit 1
-          fi
-
-          # Write export options plist
-          cat > /tmp/export_options.plist << EOF
+          cat > /tmp/export_options.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -173,20 +159,18 @@ workflows:
               <key>method</key>
               <string>development</string>
               <key>signingStyle</key>
-              <string>manual</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>com.blutask.app</key>
-                  <string>$PROFILE_UUID</string>
-              </dict>
+              <string>automatic</string>
+              <key>teamID</key>
+              <string>9FXRBZ9H3L</string>
           </dict>
           </plist>
-          EOF
+          PLIST
 
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
-            --export-options-plist /tmp/export_options.plist
+            --export-options-plist /tmp/export_options.plist \
+            --xcodebuild-arguments "DEVELOPMENT_TEAM=9FXRBZ9H3L,CODE_SIGN_STYLE=Automatic"
 
     artifacts:
       - build/ios/ipa/*.ipa
