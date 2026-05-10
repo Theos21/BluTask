@@ -168,6 +168,11 @@ workflows:
           fi
           echo "=== Build target: $BUILD_TARGET ==="
 
+          # Read exact identity name from keychain (avoids hardcoded string mismatches)
+          SIGN_IDENTITY=$(security find-identity -v -p codesigning \
+            | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "=== Using signing identity: $SIGN_IDENTITY ==="
+
           xcodebuild archive \
             $BUILD_TARGET \
             -scheme "$XCODE_SCHEME" \
@@ -176,7 +181,7 @@ workflows:
             -archivePath /tmp/App.xcarchive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=9FXRBZ9H3L \
-            CODE_SIGN_IDENTITY="Apple Development" \
+            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
             PROVISIONING_PROFILE="$PROFILE_UUID"
 
           cat > /tmp/export_options.plist << PLIST
