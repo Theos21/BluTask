@@ -81,3 +81,85 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
+  # ── App Store — Codemagic automatic code signing ─────────────────────────
+  ios-appstore:
+    name: iOS App Store
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - iOS Signing
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.blutask.app
+      node: 22
+      xcode: latest
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        BUNDLE_ID: com.blutask.app
+    scripts:
+      - name: Install Capacitor CLI globally
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 22 --no-progress
+          nvm use 22
+          node --version
+          npm install -g @capacitor/cli@8.3.3
+          cap --version
+
+      - name: Install npm dependencies
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Build web assets
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          npm run build
+
+      - name: Capacitor sync iOS
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          cap sync ios
+
+      - name: Resolve SPM packages
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME"
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles \
+            --custom-export-options '{"method":"app-store"}'
+
+      - name: Build IPA
+        script: |
+          WORKSPACE="ios/App/App.xcworkspace"
+          if [ -d "$WORKSPACE" ]; then
+            BUILD_TARGET="--workspace $WORKSPACE"
+          else
+            BUILD_TARGET="--project $XCODE_PROJECT"
+          fi
+
+          xcode-project build-ipa \
+            $BUILD_TARGET \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log

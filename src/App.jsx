@@ -24,6 +24,7 @@ import Archive from './pages/Archive'
 import Onboarding from './pages/Onboarding'
 import ResetPassword from './pages/ResetPassword'
 import SharedWatchlist from './pages/Watch/SharedWatchlist'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 
 function Spinner() {
   return (
@@ -250,6 +251,7 @@ export default function App() {
         {/* Public — no auth check */}
         <Route path="/auth" element={<AuthRoute />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/shared/watch/:token" element={<SharedWatchlist />} />
 
         {/* Onboarding */}

@@ -1,6 +1,7 @@
 {
   "appId": "com.blutask.app",
   "appName": "BluTask",
+  "version": "1.0.0",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"
