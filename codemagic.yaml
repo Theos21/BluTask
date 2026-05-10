@@ -168,20 +168,28 @@ workflows:
           fi
           echo "=== Build target: $BUILD_TARGET ==="
 
-          # Ensure cms-signing keychain is in the search list for this shell
-          security list-keychains -d user -s \
-            ~/Library/Keychains/cms-signing.keychain \
-            ~/Library/Keychains/login.keychain-db
+          # Search the keychain file directly — avoids search-list ordering issues
+          echo "=== All identities in cms-signing keychain ==="
+          security find-identity -v -p codesigning \
+            ~/Library/Keychains/cms-signing.keychain 2>&1 || true
 
+          echo "=== All identities in default keychain list ==="
+          security find-identity -v -p codesigning 2>&1 || true
+
+          echo "=== Certificate subject (raw) ==="
+          security find-certificate -a -p ~/Library/Keychains/cms-signing.keychain 2>/dev/null \
+            | openssl x509 -noout -subject 2>/dev/null || true
+
+          # Extract identity directly from the keychain file
           SIGN_IDENTITY=$(security find-identity -v -p codesigning \
+            ~/Library/Keychains/cms-signing.keychain 2>/dev/null \
             | grep -o '"[^"]*"' | head -1 | tr -d '"')
 
-          # Fall back to known identity if grep returned empty
           if [ -z "$SIGN_IDENTITY" ]; then
-            SIGN_IDENTITY="Apple Development: Samer Bader (9FXRBZ9H3L)"
-            echo "=== Falling back to hardcoded identity ==="
+            echo "ERROR: No signing identity found in cms-signing keychain"
+            exit 1
           fi
-          echo "=== Using signing identity: $SIGN_IDENTITY ==="
+          echo "=== Using signing identity: '$SIGN_IDENTITY' ==="
 
           xcodebuild archive \
             $BUILD_TARGET \
