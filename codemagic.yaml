@@ -71,21 +71,40 @@ workflows:
 
       - name: Install certificate and provisioning profile
         script: |
-          # Decode certificate from env var
+          # Decode certificate
           echo "$CERTIFICATE_B64" | base64 --decode > /tmp/apple_dev.p12
+          echo "=== p12 size: $(wc -c < /tmp/apple_dev.p12) bytes ==="
 
-          # Decode provisioning profile from env var
+          # Decode provisioning profile
           echo "$PROVISIONING_PROFILE_B64" | base64 --decode > /tmp/blutask_dev.mobileprovision
+          echo "=== profile size: $(wc -c < /tmp/blutask_dev.mobileprovision) bytes ==="
 
           # Install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp /tmp/blutask_dev.mobileprovision \
             ~/Library/MobileDevice/Provisioning\ Profiles/
 
-          # Install certificate into keychain
+          # Create and unlock the signing keychain
           keychain initialize
-          keychain add-certificates --certificate /tmp/apple_dev.p12 \
-            --certificate-password "$CERTIFICATE_PASSWORD"
+
+          # Import p12 directly via macOS security command
+          security import /tmp/apple_dev.p12 \
+            -k ~/Library/Keychains/cms-signing.keychain \
+            -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security \
+            -A
+          echo "=== security import exit: $? ==="
+
+          # Allow codesign to access the keychain without prompts
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "" \
+            ~/Library/Keychains/cms-signing.keychain 2>/dev/null || true
+
+          # Confirm identity is visible
+          echo "=== Available signing identities ==="
+          security find-identity -v -p codesigning
 
       - name: Apply provisioning profile
         script: |
