@@ -90,13 +90,33 @@ workflows:
           echo "=== profile size: $(wc -c < /tmp/blutask_dev.mobileprovision) bytes ==="
           file /tmp/blutask_dev.mobileprovision
 
-          # Verify UUID is extractable before continuing
-          PROFILE_UUID=$(security cms -D -i /tmp/blutask_dev.mobileprovision \
+          # Decode profile XML for inspection
+          PROFILE_XML=$(security cms -D -i /tmp/blutask_dev.mobileprovision)
+
+          # UUID
+          PROFILE_UUID=$(echo "$PROFILE_XML" \
             | grep -A1 '<key>UUID</key>' \
             | grep '<string>' \
             | sed 's/.*<string>\(.*\)<\/string>.*/\1/' \
             | tr -d '[:space:]')
           echo "=== Extracted UUID: '$PROFILE_UUID' ==="
+
+          # Entitlements / capabilities inside the profile
+          echo "=== Profile entitlements ==="
+          echo "$PROFILE_XML" \
+            | awk '/<key>Entitlements<\/key>/{found=1} found{print} /<\/dict>/{if(found){found=0}}' \
+            | head -40
+
+          # App ID name and expiry
+          echo "=== App ID name ==="
+          echo "$PROFILE_XML" | grep -A1 'AppIDName' | head -4
+          echo "=== Expiry date ==="
+          echo "$PROFILE_XML" | grep -A1 'ExpirationDate' | head -4
+
+          # What the Xcode project declares it needs
+          echo "=== Project entitlements file ==="
+          cat ios/App/App/App.entitlements 2>/dev/null || echo "App.entitlements not found"
+
           if [ -z "$PROFILE_UUID" ]; then
             echo "ERROR: UUID extraction failed — profile may be corrupt or env var truncated"
             exit 1
