@@ -91,14 +91,14 @@ export default function Auth() {
 
   async function handleAppleSignIn() {
     setAppleLoading(true)
-    setError(‘’)
+    setError('')
 
     const redirectTo = isCapacitor
-      ? ‘com.blutask.app://auth/callback’
+      ? 'com.blutask.app://auth/callback'
       : window.location.origin
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: ‘apple’,
+      provider: 'apple',
       options: { redirectTo },
     })
 
