@@ -16,11 +16,14 @@ workflows:
       - name: Install npm dependencies
         script: npm ci
 
+      - name: Install Capacitor CLI globally
+        script: npm install -g @capacitor/cli@8.3.3
+
       - name: Build web assets
         script: npm run build
 
       - name: Capacitor sync iOS
-        script: ./node_modules/.bin/cap sync ios
+        script: cap sync ios
 
       - name: Resolve SPM packages
         script: |
