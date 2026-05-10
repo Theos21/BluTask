@@ -168,14 +168,27 @@ workflows:
 
           mkdir -p build/ios/ipa
 
+          echo "=== Available schemes ==="
+          xcodebuild -list -project "$XCODE_PROJECT" 2>&1 || true
+
+          # Use workspace if it exists (Capacitor projects often have one)
+          WORKSPACE="ios/App/App.xcworkspace"
+          if [ -d "$WORKSPACE" ]; then
+            echo "=== Using workspace: $WORKSPACE ==="
+            BUILD_TARGET="-workspace $WORKSPACE"
+          else
+            echo "=== Using project: $XCODE_PROJECT ==="
+            BUILD_TARGET="-project $XCODE_PROJECT"
+          fi
+
           xcodebuild archive \
-            -project "$XCODE_PROJECT" \
+            $BUILD_TARGET \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
+            -destination "generic/platform=iOS" \
             -archivePath /tmp/App.xcarchive \
             CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=9FXRBZ9H3L \
-            | xcpretty --no-color 2>/dev/null || true
+            DEVELOPMENT_TEAM=9FXRBZ9H3L
 
           xcodebuild -exportArchive \
             -archivePath /tmp/App.xcarchive \
