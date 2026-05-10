@@ -6,7 +6,7 @@ workflows:
     max_build_duration: 45
     instance_type: mac_mini_m2
     environment:
-      node: 20
+      node: 22
       xcode: latest
       vars:
         XCODE_PROJECT: ios/App/App.xcodeproj
@@ -16,14 +16,17 @@ workflows:
       - name: Install npm dependencies
         script: npm ci
 
-      - name: Install Capacitor CLI globally
-        script: npm install -g @capacitor/cli@8.3.3
-
       - name: Build web assets
         script: npm run build
 
       - name: Capacitor sync iOS
-        script: cap sync ios
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 22 --no-progress
+          nvm use 22
+          node --version
+          npx cap sync ios
 
       - name: Resolve SPM packages
         script: |
