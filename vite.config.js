@@ -2,10 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const { version } = JSON.parse(readFileSync('./src-tauri/tauri.conf.json', 'utf-8'))
+
+function readVersion() {
+  try {
+    if (existsSync('./src-tauri/tauri.conf.json')) {
+      return JSON.parse(readFileSync('./src-tauri/tauri.conf.json', 'utf-8')).version
+    }
+  } catch {}
+  return JSON.parse(readFileSync('./package.json', 'utf-8')).version
+}
+const version = readVersion()
 
 export default defineConfig({
   plugins: [react()],
