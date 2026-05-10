@@ -28,16 +28,27 @@ workflows:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
-          npm install --legacy-peer-deps
+          echo "=== npm install (skip postinstall to avoid Tauri/Rust requirement) ==="
+          npm install --legacy-peer-deps --ignore-scripts
+          echo "=== vite binary check ==="
+          ls node_modules/.bin/vite || echo "ERROR: vite not found in node_modules"
+          echo "=== @capacitor/cli check ==="
+          ls node_modules/@capacitor/cli/bin/capacitor || echo "MISSING: @capacitor/cli"
 
       - name: Build web assets
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
+          echo "=== Running vite build ==="
           npm run build
-          echo "=== Build output ==="
-          ls -la dist/ || echo "ERROR: dist/ directory not created"
+          BUILD_EXIT=$?
+          echo "=== Build exit code: $BUILD_EXIT ==="
+          echo "=== Root directory after build ==="
+          ls -la
+          echo "=== dist/ contents ==="
+          ls -la dist/ 2>/dev/null || echo "ERROR: dist/ not created"
+          exit $BUILD_EXIT
 
       - name: Capacitor sync iOS
         script: |
