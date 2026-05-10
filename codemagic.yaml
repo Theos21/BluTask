@@ -131,30 +131,52 @@ workflows:
           # Persist UUID for the build step
           echo "$PROFILE_UUID" > /tmp/profile_uuid.txt
 
-          # Verify p12 is a valid PKCS12 file before importing
-          openssl pkcs12 -in /tmp/apple_dev.p12 -nokeys -passin pass:"$CERTIFICATE_PASSWORD" \
-            -noout 2>&1 && echo "=== p12 password OK ===" || echo "=== ERROR: p12 invalid or wrong password ==="
+          # ── Env var check ────────────────────────────────────────────────
+          echo "=== CERTIFICATE_PASSWORD length: ${#CERTIFICATE_PASSWORD} ==="
 
-          # Use login keychain directly — more reliable than cms-signing in CI
+          # ── P12 file check ───────────────────────────────────────────────
+          echo "=== p12 file info ==="
+          ls -la /tmp/apple_dev.p12
+          file /tmp/apple_dev.p12
+          echo "=== openssl pkcs12 info (no password) ==="
+          openssl pkcs12 -info -in /tmp/apple_dev.p12 -noout -passin pass: 2>&1 | head -5 || true
+          echo "=== openssl pkcs12 info (with password) ==="
+          openssl pkcs12 -info -in /tmp/apple_dev.p12 -noout -passin pass:"$CERTIFICATE_PASSWORD" 2>&1 | head -5 || true
+
+          # ── Keychain state ───────────────────────────────────────────────
+          echo "=== Current keychains ==="
+          security list-keychains
+          echo "=== Default keychain ==="
+          security default-keychain
+
+          # ── Import into login keychain ───────────────────────────────────
           KEYCHAIN=~/Library/Keychains/login.keychain-db
-          security unlock-keychain -p "" "$KEYCHAIN" 2>/dev/null || true
+          echo "=== Unlocking $KEYCHAIN ==="
+          security unlock-keychain -p "" "$KEYCHAIN" 2>&1 || true
           security list-keychains -d user -s "$KEYCHAIN"
 
+          echo "=== Importing with keychain (verbose) ==="
           security import /tmp/apple_dev.p12 \
             -k "$KEYCHAIN" \
             -P "$CERTIFICATE_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/security \
-            -A
-          echo "=== security import exit: $? ==="
+            -A 2>&1
+          echo "=== security import exit code: $? ==="
 
-          # Allow codesign to use the key without UI prompts
+          echo "=== Importing without keychain flag ==="
+          security import /tmp/apple_dev.p12 \
+            -P "$CERTIFICATE_PASSWORD" 2>&1 || true
+
+          # ── Partition list ───────────────────────────────────────────────
           security set-key-partition-list \
             -S apple-tool:,apple:,codesign: \
-            -s -k "" "$KEYCHAIN" 2>/dev/null || true
+            -s -k "" "$KEYCHAIN" 2>&1 || true
 
-          echo "=== Signing identities after import ==="
-          security find-identity -v -p codesigning "$KEYCHAIN"
+          echo "=== All signing identities after import ==="
+          security find-identity -v -p codesigning
+          echo "=== Identities in login keychain specifically ==="
+          security find-identity -v -p codesigning "$KEYCHAIN" 2>&1 || true
 
       - name: Build IPA
         script: |
