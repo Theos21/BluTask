@@ -184,28 +184,12 @@ workflows:
             CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
             PROVISIONING_PROFILE="$PROFILE_UUID"
 
-          node -e "
-const fs = require('fs');
-const plist = \`<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-<dict>
-    <key>method</key>
-    <string>development</string>
-    <key>signingStyle</key>
-    <string>manual</string>
-    <key>teamID</key>
-    <string>9FXRBZ9H3L</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>com.blutask.app</key>
-        <string>${PROFILE_UUID}</string>
-    </dict>
-</dict>
-</plist>\`;
-fs.writeFileSync('/tmp/export_options.plist', plist);
-console.log('export_options.plist written');
-"
+          rm -f /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :method string development" /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :teamID string 9FXRBZ9H3L" /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.blutask.app string $PROFILE_UUID" /tmp/export_options.plist
           plutil -lint /tmp/export_options.plist && echo "=== plist valid ==="
 
           xcodebuild -exportArchive \
