@@ -3,6 +3,8 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/useAuthStore'
 import { useAppStore } from './stores/useAppStore'
 import { supabase } from './lib/supabase'
+import { Capacitor } from '@capacitor/core'
+import { initPushNotifications, savePushToken } from './services/notifications'
 import AppLayout from './components/layout/AppLayout'
 import MobileLayout from './components/layout/MobileLayout'
 import { isCapacitor } from './hooks/useMobileApp'
@@ -73,12 +75,20 @@ function LandingRoute() {
 }
 
 export default function App() {
-  const { init } = useAuthStore()
+  const { init, user } = useAuthStore()
   const { theme, accentColor } = useAppStore()
   const [cmdOpen, setCmdOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useEffect(() => { init() }, [])
+
+  useEffect(() => {
+    if (!user) return
+    initPushNotifications().then((token) => {
+      if (!token) return
+      savePushToken(supabase, user.id, token, Capacitor.getPlatform())
+    }).catch(() => {})
+  }, [user])
 
   // Capacitor OAuth callback — runs at root so it's always active regardless of route.
   // Handles both cold-start (app killed, URL scheme re-launches it) via getLaunchUrl()
