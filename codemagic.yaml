@@ -106,15 +106,19 @@ workflows:
           echo "=== Available signing identities ==="
           security find-identity -v -p codesigning
 
-      - name: Apply provisioning profile
-        script: |
-          xcode-project use-profiles
-
       - name: Build IPA
         script: |
+          PROFILE_UUID=$(security cms -D -i /tmp/blutask_dev.mobileprovision 2>/dev/null \
+            | plutil -extract UUID raw - 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Print :UUID" \
+            /dev/stdin <<< "$(security cms -D -i /tmp/blutask_dev.mobileprovision)")
+          echo "=== Profile UUID: $PROFILE_UUID ==="
+
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --xcodebuild-arguments \
+              "CODE_SIGN_STYLE=Manual,PROVISIONING_PROFILE=$PROFILE_UUID,CODE_SIGN_IDENTITY=Apple Development"
 
     artifacts:
       - build/ios/ipa/*.ipa
