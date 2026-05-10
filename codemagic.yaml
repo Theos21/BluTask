@@ -188,9 +188,10 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :method string development" /tmp/export_options.plist
           /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" /tmp/export_options.plist
           /usr/libexec/PlistBuddy -c "Add :teamID string 9FXRBZ9H3L" /tmp/export_options.plist
+          /usr/libexec/PlistBuddy -c "Add :signingCertificate string $SIGN_IDENTITY" /tmp/export_options.plist
           /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" /tmp/export_options.plist
           /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.blutask.app string $PROFILE_UUID" /tmp/export_options.plist
-          plutil -lint /tmp/export_options.plist && echo "=== plist valid ==="
+          plutil -lint /tmp/export_options.plist && echo "=== plist valid ===" && plutil -p /tmp/export_options.plist
 
           xcodebuild -exportArchive \
             -archivePath /tmp/App.xcarchive \
