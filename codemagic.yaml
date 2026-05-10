@@ -1,14 +1,11 @@
 workflows:
 
-  # ── Development — installs to a registered test device via ad-hoc signing ───
+  # ── Development — certificate from encrypted environment variables ─────────
   ios-development:
     name: iOS Development
     max_build_duration: 45
     instance_type: mac_mini_m2
     environment:
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: com.blutask.app
       node: 20
       xcode: latest
       vars:
@@ -31,72 +28,27 @@ workflows:
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME"
 
-      - name: "[DEBUG] Environment and tool versions"
+      - name: Install certificate and provisioning profile
         script: |
-          echo "=== Xcode version ==="
-          xcodebuild -version
-          echo "=== Node version ==="
-          node --version
-          echo "=== Bundle ID ==="
-          echo "$BUNDLE_ID"
-          echo "=== Codemagic CLI tools version ==="
-          app-store-connect --version 2>/dev/null || echo "app-store-connect not found"
-          keychain --version 2>/dev/null || echo "keychain not found"
-          xcode-project --version 2>/dev/null || echo "xcode-project not found"
+          # Decode certificate from env var
+          echo "$CERTIFICATE_B64" | base64 --decode > /tmp/apple_dev.p12
 
-      - name: "[DEBUG] List existing certificates in Apple Developer"
-        script: |
-          echo "=== Certificates in Apple Developer Portal ==="
-          app-store-connect list-certificates \
-            --type IOS_DEVELOPMENT \
-            --json 2>&1 || echo "Could not list certificates (check Apple Developer integration)"
+          # Decode provisioning profile from env var
+          echo "$PROVISIONING_PROFILE_B64" | base64 --decode > /tmp/blutask_dev.mobileprovision
 
-      - name: "[DEBUG] List existing provisioning profiles"
-        script: |
-          echo "=== Provisioning profiles in Apple Developer Portal ==="
-          app-store-connect list-profiles \
-            --profile-type IOS_APP_DEVELOPMENT \
-            --json 2>&1 || echo "Could not list profiles (check Apple Developer integration)"
+          # Install provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp /tmp/blutask_dev.mobileprovision \
+            ~/Library/MobileDevice/Provisioning\ Profiles/
 
-      - name: "[DEBUG] List registered devices"
-        script: |
-          echo "=== Registered devices ==="
-          app-store-connect list-devices --json 2>&1 || echo "Could not list devices"
-
-      - name: Fetch or create signing certificate and profile
-        script: |
-          echo "=== Fetching signing files for: $BUNDLE_ID ==="
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_DEVELOPMENT \
-            --create \
-            --json 2>&1
-          echo "=== fetch-signing-files exit code: $? ==="
-
-      - name: "[DEBUG] List downloaded signing files"
-        script: |
-          echo "=== Certificates downloaded to build machine ==="
-          ls -la "$CM_CERTIFICATE" 2>/dev/null || echo "CM_CERTIFICATE path: $CM_CERTIFICATE (not found)"
-          echo "=== Profiles directory ==="
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles directory found"
-
-      - name: Add certificates to keychain
-        script: |
-          echo "=== Initialising keychain ==="
+          # Install certificate into keychain
           keychain initialize
-          echo "=== Adding certificates ==="
-          keychain add-certificates
-          echo "=== Certificates now in keychain ==="
-          security find-identity -v -p codesigning 2>/dev/null || echo "security find-identity failed"
+          keychain add-certificates --certificate /tmp/apple_dev.p12 \
+            --certificate-password "$CERTIFICATE_PASSWORD"
 
-      - name: Set up code signing settings
+      - name: Apply provisioning profile
         script: |
-          echo "=== Running xcode-project use-profiles ==="
-          xcode-project use-profiles --custom-export-options '{"method":"development"}' 2>&1
-          echo "=== Resolved build settings ==="
-          xcodebuild -project "$XCODE_PROJECT" \
-            -scheme "$XCODE_SCHEME" \
-            -showBuildSettings 2>&1 \
-            | grep -E "CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM|ENTITLEMENTS" || true
+          xcode-project use-profiles
 
       - name: Build IPA
         script: |
