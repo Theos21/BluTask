@@ -168,9 +168,19 @@ workflows:
           fi
           echo "=== Build target: $BUILD_TARGET ==="
 
-          # Read exact identity name from keychain (avoids hardcoded string mismatches)
+          # Ensure cms-signing keychain is in the search list for this shell
+          security list-keychains -d user -s \
+            ~/Library/Keychains/cms-signing.keychain \
+            ~/Library/Keychains/login.keychain-db
+
           SIGN_IDENTITY=$(security find-identity -v -p codesigning \
             | grep -o '"[^"]*"' | head -1 | tr -d '"')
+
+          # Fall back to known identity if grep returned empty
+          if [ -z "$SIGN_IDENTITY" ]; then
+            SIGN_IDENTITY="Apple Development: Samer Bader (9FXRBZ9H3L)"
+            echo "=== Falling back to hardcoded identity ==="
+          fi
           echo "=== Using signing identity: $SIGN_IDENTITY ==="
 
           xcodebuild archive \
