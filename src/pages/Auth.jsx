@@ -91,57 +91,22 @@ export default function Auth() {
 
   async function handleAppleSignIn() {
     setAppleLoading(true)
-    setError('')
+    setError(‘’)
 
-    try {
-      // Generate a random nonce and its SHA-256 hash.
-      // Apple requires the hashed nonce; Supabase needs the raw nonce to verify.
-      const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-        .map(b => b.toString(16).padStart(2, '0')).join('')
+    const redirectTo = isCapacitor
+      ? ‘com.blutask.app://auth/callback’
+      : window.location.origin
 
-      const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(rawNonce)
-      )
-      const hashedNonce = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0')).join('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: ‘apple’,
+      options: { redirectTo },
+    })
 
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
-      const result = await SignInWithApple.authorize({
-        clientId:    'com.blutask.app',
-        redirectURI: 'https://app.blutask.com',
-        scopes:      'email name',
-        nonce:       hashedNonce,
-      })
-
-      const { identityToken, givenName, familyName } = result.response
-
-      // Exchange the Apple identity token with Supabase
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token:    identityToken,
-        nonce:    rawNonce,
-      })
-
-      if (error) throw error
-
-      // Apple only sends name on first sign-in — persist it if available
-      if (data?.user && (givenName || familyName)) {
-        const fullName = [givenName, familyName].filter(Boolean).join(' ')
-        if (fullName) {
-          await supabase.from('profiles')
-            .upsert({ id: data.user.id, full_name: fullName }, { onConflict: 'id', ignoreDuplicates: false })
-        }
-      }
-
-      navigate('/home', { replace: true })
-    } catch (err) {
-      // 'USER_CANCELLED' is thrown when the user dismisses the sheet — not an error
-      if (err?.code !== 'USER_CANCELLED' && err?.message !== "The operation couldn’t be completed.") {
-        setError(err?.message || 'Apple sign in failed')
-      }
+    if (error) {
+      setError(error.message)
       setAppleLoading(false)
     }
+    // On success the browser navigates away; App.jsx callback handler resumes sign-in.
   }
 
   function switchMode(m) {
