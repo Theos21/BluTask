@@ -13,18 +13,38 @@ workflows:
         XCODE_SCHEME: App
         BUNDLE_ID: com.blutask.app
     scripts:
-      - name: Install npm dependencies
+      - name: Debug environment
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install 22 --no-progress
           nvm use 22
+          echo "=== Working directory ==="
+          pwd
+          echo "=== Directory contents ==="
+          ls -la
+          echo "=== Node / npm versions ==="
           node --version
           npm --version
+          echo "=== npm config ==="
+          npm config list
+          echo "=== package.json capacitor entries ==="
+          grep -i capacitor package.json || echo "No capacitor entries found"
+
+      - name: Install npm dependencies
+        script: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          echo "=== Running npm install ==="
           npm install --legacy-peer-deps
-          echo "=== @capacitor/cli check ==="
-          ls node_modules/@capacitor/cli/bin/ 2>/dev/null || echo "MISSING: @capacitor/cli not installed"
-          npm ls @capacitor/cli 2>/dev/null || true
+          echo "=== npm install exit code: $? ==="
+          echo "=== node_modules top-level (first 30) ==="
+          ls node_modules/ 2>/dev/null | head -30 || echo "node_modules does not exist"
+          echo "=== @capacitor packages ==="
+          ls node_modules/@capacitor/ 2>/dev/null || echo "MISSING: @capacitor scope not found"
+          echo "=== capacitor/cli bin ==="
+          ls -la node_modules/@capacitor/cli/bin/ 2>/dev/null || echo "MISSING: @capacitor/cli/bin not found"
 
       - name: Build web assets
         script: |
