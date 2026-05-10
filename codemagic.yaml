@@ -184,24 +184,29 @@ workflows:
             CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
             PROVISIONING_PROFILE="$PROFILE_UUID"
 
-          cat > /tmp/export_options.plist << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>teamID</key>
-              <string>9FXRBZ9H3L</string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>com.blutask.app</key>
-                  <string>$PROFILE_UUID</string>
-              </dict>
-          </dict>
-          PLIST
+          node -e "
+const fs = require('fs');
+const plist = \`<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+    <key>method</key>
+    <string>development</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>teamID</key>
+    <string>9FXRBZ9H3L</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.blutask.app</key>
+        <string>${PROFILE_UUID}</string>
+    </dict>
+</dict>
+</plist>\`;
+fs.writeFileSync('/tmp/export_options.plist', plist);
+console.log('export_options.plist written');
+"
+          plutil -lint /tmp/export_options.plist && echo "=== plist valid ==="
 
           xcodebuild -exportArchive \
             -archivePath /tmp/App.xcarchive \
