@@ -20,7 +20,11 @@ workflows:
           nvm install 22 --no-progress
           nvm use 22
           node --version
-          npm ci
+          npm --version
+          npm install --legacy-peer-deps
+          echo "=== @capacitor/cli check ==="
+          ls node_modules/@capacitor/cli/bin/ 2>/dev/null || echo "MISSING: @capacitor/cli not installed"
+          npm ls @capacitor/cli 2>/dev/null || true
 
       - name: Build web assets
         script: |
