@@ -329,7 +329,7 @@ export default function Calendar() {
               >
                 <ChevronLeft size={15} />
               </button>
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 min-w-[200px] text-center">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center min-w-0 flex-1 md:flex-none md:min-w-[200px] truncate">
                 {format(weekStart, 'MMM d')} – {format(endOfWeek(weekStart), 'MMM d, yyyy')}
               </span>
               <button
@@ -659,13 +659,16 @@ export default function Calendar() {
             onClick={() => setMobileDaySheetOpen(false)}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 md:hidden flex flex-col"
-            style={{ height: '70vh' }}
+            className="fixed left-0 right-0 z-50 rounded-t-2xl bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 md:hidden flex flex-col"
+            style={{
+              bottom: 'calc(54px + env(safe-area-inset-bottom, 0px))',
+              height: '65vh',
+            }}
           >
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pb-4">
               <DayDetailPanel />
             </div>
           </div>

@@ -1,0 +1,14 @@
+{
+  "appId": "com.blutask.app",
+  "appName": "BluTask",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#1a1f2e"
+    }
+  }
+}

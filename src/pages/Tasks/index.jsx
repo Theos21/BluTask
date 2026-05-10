@@ -112,8 +112,8 @@ export default function Tasks() {
     function handle(e) {
       if (!ctxMenuRef.current?.contains(e.target)) setCtxMenu(null)
     }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
+    document.addEventListener('pointerdown', handle)
+    return () => document.removeEventListener('pointerdown', handle)
   }, [ctxMenu])
 
   useEffect(() => {
@@ -121,14 +121,14 @@ export default function Tasks() {
     function handle(e) {
       if (!sortMenuRef.current?.contains(e.target)) setSortMenuOpen(false)
     }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
+    document.addEventListener('pointerdown', handle)
+    return () => document.removeEventListener('pointerdown', handle)
   }, [sortMenuOpen])
 
   function openContextMenu(e, type, id) {
     e.preventDefault()
     e.stopPropagation()
-    const x = Math.min(e.clientX, window.innerWidth - 164)
+    const x = Math.max(8, Math.min(e.clientX, window.innerWidth - 164))
     const y = Math.min(e.clientY, window.innerHeight - 96)
     setCtxMenu({ type, id, x, y })
   }

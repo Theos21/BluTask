@@ -876,3 +876,324 @@ input, textarea, button { font-family: inherit; color: inherit; }
   .page-head-right .btn-primary,
   .page-head-right .btn-ghost { justify-content: center; }
 }
+
+/* ============================================================
+   CAPACITOR MOBILE APP LAYOUT
+   Only applies when running inside the native Capacitor shell.
+   The web version (AppLayout + Sidebar) is completely unchanged.
+   ============================================================ */
+
+/* Full-height app wrapper with iOS safe-area support */
+.mob-app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;               /* dynamic viewport = respects browser chrome */
+  background: var(--bg);
+  /* push content below the notch / status bar */
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Scrollable page area — sits above the tab bar */
+.mob-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  /* give pages extra bottom room so content isn't hidden by the tab bar */
+  padding-bottom: 16px;
+}
+
+/* ── Bottom tab bar ─────────────────────────────────────── */
+.mob-tab-bar {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  /* grow into the home-indicator area on notched iPhones */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mob-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 54px;             /* Apple HIG: 44px minimum tap target */
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px)) 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--fg-3);
+  transition: color .12s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+/* override the padding-bottom double-counting; let tab-bar handle it */
+.mob-tab { padding-bottom: 8px; }
+
+.mob-tab.active { color: var(--accent); }
+
+.mob-tab-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mob-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+/* Badge bubble on tab icon */
+.mob-badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0b1220;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1.5px solid var(--bg);
+}
+.mob-badge.danger {
+  background: oklch(0.72 0.16 25);
+  color: white;
+}
+
+/* Small avatar shown in the tab bar "More" button */
+.mob-avatar-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, oklch(0.72 0.14 240), oklch(0.72 0.14 295));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: white;
+}
+
+/* ── Bottom sheet ───────────────────────────────────────── */
+.mob-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, .5);
+  animation: mob-fade-in .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes mob-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mob-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 110;
+  background: var(--bg-2);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border-2);
+  /* grow into the home-indicator notch */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, .3);
+  animation: mob-sheet-up .25s cubic-bezier(.32,1,.56,1);
+}
+
+@keyframes mob-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.mob-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--fg-4);
+  border-radius: 999px;
+  margin: 12px auto 4px;
+  opacity: .45;
+}
+
+.mob-sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px 16px;
+}
+
+.mob-avatar-lg {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, oklch(0.72 0.14 240), oklch(0.72 0.14 295));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.mob-sheet-user-info { flex: 1; min-width: 0; }
+.mob-sheet-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mob-sheet-email {
+  font-size: 12px;
+  color: var(--fg-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mob-sheet-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.mob-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--fg);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .08s;
+}
+.mob-sheet-item:active { background: var(--bg-3); }
+.mob-sheet-item.danger { color: oklch(0.62 0.16 25); }
+.mob-sheet-chevron { margin-left: auto; color: var(--fg-4); flex-shrink: 0; }
+
+.mob-sheet-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.mob-sheet-theme-label { color: var(--fg); }
+
+.mob-theme-seg {
+  display: flex;
+  gap: 4px;
+}
+.mob-theme-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .1s, color .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-theme-seg button.on {
+  background: var(--bg-4);
+  color: var(--fg);
+}
+
+/* ── Mobile auth safe area (pushes content below status bar) */
+.mob-auth-safe {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+}
+
+/* ── Page-level adjustments inside mob-content ──────────── */
+/* Give pages inside the mobile layout comfortable thumb spacing */
+.mob-content .page {
+  padding: 20px 16px 80px;
+}
+.mob-content .page-head h1 {
+  font-size: 24px;
+}
+.mob-content .watch-content {
+  padding: 16px 16px 80px;
+}
+
+/* Larger tap targets for all interactive rows in mobile layout */
+.mob-content .task {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.mob-content .assignment-row {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.mob-content .seg-btn {
+  min-height: 38px;
+  padding: 7px 14px;
+}
+.mob-content .btn-primary,
+.mob-content .btn-ghost {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+/* Inputs easier to tap */
+.mob-content .input-base {
+  padding: 11px 14px;
+  font-size: 16px; /* prevents iOS auto-zoom on focus */
+}
+
+/* School page — assignment list needs bottom breathing room */
+.mob-content .assignments-list {
+  padding-bottom: 80px;
+}
+
+/* Floating task/assignment action menus — must clear the tab bar */
+.mob-content .task-action-menu,
+.mob-content .asg-action-menu {
+  z-index: 200;
+}
+
+/* Checkbox touch area — slightly larger on mobile */
+.mob-content .task-check-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* Prevent horizontal overflow on Calendar week view header */
+.mob-content .calendar-week-header {
+  min-width: 0;
+  overflow: hidden;
+}

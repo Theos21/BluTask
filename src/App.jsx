@@ -2,7 +2,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/useAuthStore'
 import { useAppStore } from './stores/useAppStore'
+import { supabase } from './lib/supabase'
 import AppLayout from './components/layout/AppLayout'
+import MobileLayout from './components/layout/MobileLayout'
+import { isCapacitor } from './hooks/useMobileApp'
 import Toaster from './components/toast'
 import { toasterRef, triggerUndo } from './lib/toast'
 import CommandPalette from './components/CommandPalette'
@@ -57,11 +60,15 @@ function AuthRoute() {
 
 const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
 
+// Pick the right shell: native mobile gets bottom-tab layout, everything else gets sidebar
+const AppShell = isCapacitor ? MobileLayout : AppLayout
+
 function LandingRoute() {
   const { user, loading } = useAuthStore()
   if (loading) return <Spinner />
   if (user) return <Navigate to="/home" replace />
-  if (isTauri) return <Navigate to="/auth" replace />
+  // Desktop app and mobile native app skip the landing page
+  if (isTauri || isCapacitor) return <Navigate to="/auth" replace />
   return <Landing />
 }
 
@@ -72,6 +79,89 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useEffect(() => { init() }, [])
+
+  // Capacitor OAuth callback — runs at root so it's always active regardless of route.
+  // Handles both cold-start (app killed, URL scheme re-launches it) via getLaunchUrl()
+  // and warm-start (app backgrounded, URL scheme foregrounds it) via appUrlOpen.
+  useEffect(() => {
+    if (!isCapacitor) return
+
+    let removeListener = () => {}
+
+    async function processOAuthUrl(url) {
+      if (!url?.startsWith('com.blutask.app://')) return
+
+      console.log('[OAuth] Callback URL received:', url)
+
+      // Supabase can return tokens two ways:
+      //   Implicit flow → tokens in hash:  #access_token=...&refresh_token=...
+      //   PKCE flow     → code in query:   ?code=...
+      const hashParams  = new URLSearchParams(url.includes('#') ? url.split('#')[1] : '')
+      const queryParams = new URLSearchParams(url.includes('?') ? url.split('?')[1].split('#')[0] : '')
+
+      console.log('[OAuth] Hash params:', Object.fromEntries(hashParams.entries()))
+      console.log('[OAuth] Query params:', Object.fromEntries(queryParams.entries()))
+
+      const urlError = hashParams.get('error') || queryParams.get('error')
+      if (urlError) {
+        const desc = hashParams.get('error_description') || queryParams.get('error_description')
+        console.log('[OAuth] Error in callback URL:', urlError, desc)
+        return
+      }
+
+      // ── Implicit flow ────────────────────────────────────────────────────
+      if (hashParams.has('access_token')) {
+        const access_token  = hashParams.get('access_token')
+        const refresh_token = hashParams.get('refresh_token')
+        console.log('[OAuth] Implicit flow — calling setSession()')
+        const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
+        if (error) console.log('[OAuth] setSession failed:', error.message)
+        else console.log('[OAuth] Signed in (implicit):', data?.user?.email)
+        return
+      }
+
+      // ── PKCE / auth-code flow ────────────────────────────────────────────
+      if (queryParams.has('code')) {
+        console.log('[OAuth] PKCE flow — calling exchangeCodeForSession()')
+        const { data, error } = await supabase.auth.exchangeCodeForSession(url)
+        if (error) console.log('[OAuth] exchangeCodeForSession failed:', error.message)
+        else console.log('[OAuth] Signed in (PKCE):', data?.user?.email)
+        return
+      }
+
+      console.log('[OAuth] No access_token or code found in callback URL')
+      // Navigation is automatic: onAuthStateChange fires → auth store updates user → AuthRoute redirects to /home
+    }
+
+    ;(async () => {
+      try {
+        const { App: CapApp } = await import('@capacitor/app')
+
+        // Cold-start: app was launched via the URL scheme after being killed
+        // getLaunchUrl() returns null when there is no launch URL
+        const launchResult = await CapApp.getLaunchUrl()
+        console.log('[OAuth] getLaunchUrl result:', launchResult)
+        const launchUrl = launchResult?.url ?? null
+        if (launchUrl) {
+          console.log('[OAuth] Cold-start launch URL:', launchUrl)
+          await processOAuthUrl(launchUrl)
+        }
+
+        // Warm-start: app was foregrounded via the URL scheme
+        const handle = await CapApp.addListener('appUrlOpen', (data) => {
+          console.log('[OAuth] appUrlOpen data:', data)
+          const url = data?.url ?? null
+          if (url) processOAuthUrl(url)
+        })
+        removeListener = () => handle.remove()
+        console.log('[OAuth] URL listener registered')
+      } catch (err) {
+        console.log('[OAuth] URL listener setup failed:', err?.message ?? err)
+      }
+    })()
+
+    return () => removeListener()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep system theme in sync with OS preference changes
   useEffect(() => {
@@ -132,8 +222,8 @@ export default function App() {
       <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      {/* ? button — bottom right corner, hidden on landing */}
-      {!isLanding && (
+      {/* ? button — bottom right corner, hidden on landing and in Capacitor */}
+      {!isLanding && !isCapacitor && (
         <button
           onClick={() => setShortcutsOpen(true)}
           className="fixed bottom-4 right-4 z-50 w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200 text-xs font-semibold transition-colors flex items-center justify-center shadow-sm"
@@ -167,7 +257,7 @@ export default function App() {
           path="/home"
           element={
             <ProtectedRoute>
-              <AppLayout />
+              <AppShell />
             </ProtectedRoute>
           }
         >

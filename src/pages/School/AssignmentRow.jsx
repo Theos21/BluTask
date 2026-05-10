@@ -58,8 +58,8 @@ export default function AssignmentRow({ assignment, classData, onEdit, showClass
       const inMenu = menuContentRef.current?.contains(e.target)
       if (!inBtn && !inMenu) setMenuOpen(false)
     }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
+    document.addEventListener('pointerdown', handle)
+    return () => document.removeEventListener('pointerdown', handle)
   }, [menuOpen])
 
   function toggleMenu(e) {
@@ -68,7 +68,9 @@ export default function AssignmentRow({ assignment, classData, onEdit, showClass
     const rect = menuBtnRef.current?.getBoundingClientRect()
     if (!rect) return
     const menuHeight = 80
-    const top = rect.bottom + 4 + menuHeight > window.innerHeight ? rect.top - menuHeight - 4 : rect.bottom + 4
+    // Reserve 64px at the bottom for the mobile tab bar
+    const safeBottom = window.innerHeight - 64
+    const top = rect.bottom + 4 + menuHeight > safeBottom ? rect.top - menuHeight - 4 : rect.bottom + 4
     setMenuPos({ top, right: window.innerWidth - rect.right })
     setMenuOpen(true)
   }
