@@ -1,6 +1,6 @@
 workflows:
 
-  # ── Development — certificate from encrypted environment variables ─────────
+  # ── Development — Codemagic automatic code signing ───────────────────────
   ios-development:
     name: iOS Development
     max_build_duration: 45
@@ -8,6 +8,9 @@ workflows:
     environment:
       groups:
         - iOS Signing
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.blutask.app
       node: 22
       xcode: latest
       vars:
@@ -30,39 +33,20 @@ workflows:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
-          echo "=== npm install (skip postinstall to avoid Tauri/Rust requirement) ==="
           npm install --legacy-peer-deps --ignore-scripts
-          echo "=== vite binary check ==="
-          ls node_modules/.bin/vite || echo "ERROR: vite not found in node_modules"
-          echo "=== @capacitor/cli check ==="
-          ls node_modules/@capacitor/cli/bin/capacitor || echo "MISSING: @capacitor/cli"
 
       - name: Build web assets
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
-          echo "=== Running vite build ==="
           npm run build
-          BUILD_EXIT=$?
-          echo "=== Build exit code: $BUILD_EXIT ==="
-          echo "=== Root directory after build ==="
-          ls -la
-          echo "=== dist/ contents ==="
-          ls -la dist/ 2>/dev/null || echo "ERROR: dist/ not created"
-          exit $BUILD_EXIT
 
       - name: Capacitor sync iOS
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
-          echo "=== Working dir ==="
-          pwd
-          echo "=== capacitor.config.json ==="
-          cat capacitor.config.json
-          echo "=== dist/ exists? ==="
-          ls dist/ | head -5
           cap sync ios
 
       - name: Resolve SPM packages
@@ -71,163 +55,30 @@ workflows:
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME"
 
-      - name: Install certificate and provisioning profile
+      - name: Set up code signing
         script: |
-          # --- Certificate ---
-          echo "=== CERTIFICATE_B64 length: ${#CERTIFICATE_B64} ==="
-          echo "$CERTIFICATE_B64" | base64 --decode > /tmp/apple_dev.p12
-          echo "=== p12 size: $(wc -c < /tmp/apple_dev.p12) bytes ==="
-          file /tmp/apple_dev.p12
-
-          # --- Provisioning profile ---
-          echo "=== PROVISIONING_PROFILE_B64 length: ${#PROVISIONING_PROFILE_B64} ==="
-          echo "=== First 60 chars: ${PROVISIONING_PROFILE_B64:0:60} ==="
-          echo "=== Last  60 chars: ${PROVISIONING_PROFILE_B64: -60} ==="
-
-          # Decode — try ignoring unknown chars in case of line-break artefacts
-          echo "$PROVISIONING_PROFILE_B64" | base64 --decode --ignore-garbage > /tmp/blutask_dev.mobileprovision 2>/dev/null \
-            || echo "$PROVISIONING_PROFILE_B64" | base64 -d > /tmp/blutask_dev.mobileprovision
-          echo "=== profile size: $(wc -c < /tmp/blutask_dev.mobileprovision) bytes ==="
-          file /tmp/blutask_dev.mobileprovision
-
-          # Decode profile XML for inspection
-          PROFILE_XML=$(security cms -D -i /tmp/blutask_dev.mobileprovision)
-
-          # UUID
-          PROFILE_UUID=$(echo "$PROFILE_XML" \
-            | grep -A1 '<key>UUID</key>' \
-            | grep '<string>' \
-            | sed 's/.*<string>\(.*\)<\/string>.*/\1/' \
-            | tr -d '[:space:]')
-          echo "=== Extracted UUID: '$PROFILE_UUID' ==="
-
-          # Entitlements / capabilities inside the profile
-          echo "=== Profile entitlements ==="
-          echo "$PROFILE_XML" \
-            | awk '/<key>Entitlements<\/key>/{found=1} found{print} /<\/dict>/{if(found){found=0}}' \
-            | head -40
-
-          # App ID name and expiry
-          echo "=== App ID name ==="
-          echo "$PROFILE_XML" | grep -A1 'AppIDName' | head -4
-          echo "=== Expiry date ==="
-          echo "$PROFILE_XML" | grep -A1 'ExpirationDate' | head -4
-
-          # What the Xcode project declares it needs
-          echo "=== Project entitlements file ==="
-          cat ios/App/App/App.entitlements 2>/dev/null || echo "App.entitlements not found"
-
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "ERROR: UUID extraction failed — profile may be corrupt or env var truncated"
-            exit 1
-          fi
-
-          # Install profile named by UUID (required for manual signing lookup)
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp /tmp/blutask_dev.mobileprovision \
-            ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
-          echo "=== Installed profile as ${PROFILE_UUID}.mobileprovision ==="
-
-          # Persist UUID for the build step
-          echo "$PROFILE_UUID" > /tmp/profile_uuid.txt
-
-          # ── Env var check ────────────────────────────────────────────────
-          echo "=== CERTIFICATE_PASSWORD length: ${#CERTIFICATE_PASSWORD} ==="
-
-          # ── P12 file check ───────────────────────────────────────────────
-          echo "=== p12 file info ==="
-          ls -la /tmp/apple_dev.p12
-          file /tmp/apple_dev.p12
-          echo "=== openssl pkcs12 info (no password) ==="
-          openssl pkcs12 -info -in /tmp/apple_dev.p12 -noout -passin pass: 2>&1 | head -5 || true
-          echo "=== openssl pkcs12 info (with password) ==="
-          openssl pkcs12 -info -in /tmp/apple_dev.p12 -noout -passin pass:"$CERTIFICATE_PASSWORD" 2>&1 | head -5 || true
-
-          # ── Keychain state ───────────────────────────────────────────────
-          echo "=== Current keychains ==="
-          security list-keychains
-          echo "=== Default keychain ==="
-          security default-keychain
-
-          # ── Import into login keychain ───────────────────────────────────
-          KEYCHAIN=~/Library/Keychains/login.keychain-db
-          echo "=== Unlocking $KEYCHAIN ==="
-          security unlock-keychain -p "" "$KEYCHAIN" 2>&1 || true
-          security list-keychains -d user -s "$KEYCHAIN"
-
-          echo "=== Importing with keychain (verbose) ==="
-          security import /tmp/apple_dev.p12 \
-            -k "$KEYCHAIN" \
-            -P "$CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security \
-            -A 2>&1
-          echo "=== security import exit code: $? ==="
-
-          echo "=== Importing without keychain flag ==="
-          security import /tmp/apple_dev.p12 \
-            -P "$CERTIFICATE_PASSWORD" 2>&1 || true
-
-          # ── Partition list ───────────────────────────────────────────────
-          security set-key-partition-list \
-            -S apple-tool:,apple:,codesign: \
-            -s -k "" "$KEYCHAIN" 2>&1 || true
-
-          echo "=== All signing identities after import ==="
-          security find-identity -v -p codesigning
-          echo "=== Identities in login keychain specifically ==="
-          security find-identity -v -p codesigning "$KEYCHAIN" 2>&1 || true
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_DEVELOPMENT \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Build IPA
         script: |
-          PROFILE_UUID=$(cat /tmp/profile_uuid.txt)
-          echo "=== Using profile UUID: $PROFILE_UUID ==="
-
-          mkdir -p build/ios/ipa
-
-          # Use workspace generated by cap sync (preferred) or fall back to project
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
             BUILD_TARGET="-workspace $WORKSPACE"
           else
             BUILD_TARGET="-project $XCODE_PROJECT"
           fi
-          echo "=== Build target: $BUILD_TARGET ==="
-
-          KEYCHAIN=~/Library/Keychains/login.keychain-db
-          security list-keychains -d user -s "$KEYCHAIN"
-
-          echo "=== Signing identities in login keychain ==="
-          security find-identity -v -p codesigning "$KEYCHAIN" 2>&1 || true
-
-          SIGN_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" 2>/dev/null \
-            | grep -o '"[^"]*"' | head -1 | tr -d '"')
-
-          if [ -z "$SIGN_IDENTITY" ]; then
-            echo "ERROR: No signing identity found — certificate installation failed"
-            exit 1
-          fi
-          echo "=== Using signing identity: '$SIGN_IDENTITY' ==="
 
           xcodebuild archive \
             $BUILD_TARGET \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -destination "generic/platform=iOS" \
-            -archivePath /tmp/App.xcarchive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=9FXRBZ9H3L \
-            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
-            PROVISIONING_PROFILE="$PROFILE_UUID"
-
-          rm -f /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :method string development" /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :teamID string 9FXRBZ9H3L" /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :signingCertificate string $SIGN_IDENTITY" /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" /tmp/export_options.plist
-          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.blutask.app string $PROFILE_UUID" /tmp/export_options.plist
-          plutil -lint /tmp/export_options.plist && echo "=== plist valid ===" && plutil -p /tmp/export_options.plist
+            -archivePath /tmp/App.xcarchive
 
           xcodebuild -exportArchive \
             -archivePath /tmp/App.xcarchive \
