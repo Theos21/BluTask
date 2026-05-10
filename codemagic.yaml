@@ -166,11 +166,21 @@ workflows:
           </plist>
           PLIST
 
-          xcode-project build-ipa \
-            --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME" \
-            --export-options-plist /tmp/export_options.plist \
-            --xcodebuild-arguments "DEVELOPMENT_TEAM=9FXRBZ9H3L,CODE_SIGN_STYLE=Automatic"
+          mkdir -p build/ios/ipa
+
+          xcodebuild archive \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -archivePath /tmp/App.xcarchive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=9FXRBZ9H3L \
+            | xcpretty --no-color 2>/dev/null || true
+
+          xcodebuild -exportArchive \
+            -archivePath /tmp/App.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist /tmp/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
