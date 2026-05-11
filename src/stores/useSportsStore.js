@@ -5,6 +5,7 @@ export const useSportsStore = create((set) => ({
   sessions:  [],
   drills:    [],
   equipment: [],
+  roster:    [],
 
   // ── Sessions ────────────────────────────────────────────────
   fetchSessions: async (userId) => {
@@ -99,6 +100,35 @@ export const useSportsStore = create((set) => ({
     const { data, error } = await supabase
       .from('sports_equipment').update({ checked }).eq('id', id).select().single()
     if (!error) set((s) => ({ equipment: s.equipment.map((x) => (x.id === id ? data : x)) }))
+    return { error }
+  },
+
+  // ── Roster ──────────────────────────────────────────────────
+  fetchRoster: async (userId) => {
+    const { data } = await supabase
+      .from('sports_roster')
+      .select('*')
+      .eq('user_id', userId)
+      .order('name', { ascending: true })
+    if (data) set({ roster: data })
+  },
+
+  addRosterMember: async (row) => {
+    const { data, error } = await supabase.from('sports_roster').insert([row]).select().single()
+    if (!error) set((s) => ({ roster: [...s.roster, data].sort((a, b) => a.name.localeCompare(b.name)) }))
+    return { data, error }
+  },
+
+  updateRosterMember: async (id, updates) => {
+    const { data, error } = await supabase
+      .from('sports_roster').update(updates).eq('id', id).select().single()
+    if (!error) set((s) => ({ roster: s.roster.map((x) => (x.id === id ? data : x)) }))
+    return { data, error }
+  },
+
+  deleteRosterMember: async (id) => {
+    const { error } = await supabase.from('sports_roster').delete().eq('id', id)
+    if (!error) set((s) => ({ roster: s.roster.filter((x) => x.id !== id) }))
     return { error }
   },
 }))
