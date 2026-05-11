@@ -30,14 +30,14 @@ async function callClaude(apiKey: string, system: string, userContent: string, m
   if (!res.ok) throw new Error(`Anthropic API returned ${res.status}: ${body.slice(0, 200)}`)
 
   const parsed = JSON.parse(body)
-  let text: string = parsed.content?.[0]?.text ?? ''
+  const raw: string = parsed.content?.[0]?.text ?? ''
+  return stripCodeFences(raw)
+}
 
-  // Strip markdown code fences if present
-  text = text.trim()
-  if (text.startsWith('```')) {
-    text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
-  }
-  return text
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim()
+  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```\s*$/i)
+  return match ? match[1].trim() : trimmed
 }
 
 Deno.serve(async (req) => {
@@ -76,7 +76,12 @@ Deno.serve(async (req) => {
           payload.input,
           512,
         )
-        return json({ task: JSON.parse(text) })
+        try {
+          return json({ task: JSON.parse(text) })
+        } catch {
+          console.error('parse_task: JSON.parse failed, raw output:', text.slice(0, 300))
+          return json({ error: 'AI returned non-JSON output for parse_task', detail: text.slice(0, 300) }, 502)
+        }
       }
 
       case 'parse_assignments': {
@@ -86,7 +91,12 @@ Deno.serve(async (req) => {
           payload.text,
           2048,
         )
-        return json({ assignments: JSON.parse(text) })
+        try {
+          return json({ assignments: JSON.parse(text) })
+        } catch {
+          console.error('parse_assignments: JSON.parse failed, raw output:', text.slice(0, 300))
+          return json({ error: 'AI returned non-JSON output for parse_assignments', detail: text.slice(0, 300) }, 502)
+        }
       }
 
       case 'breakdown_assignment': {
@@ -96,7 +106,12 @@ Deno.serve(async (req) => {
           `"${payload.title}" (type: ${payload.type})`,
           512,
         )
-        return json({ steps: JSON.parse(text) })
+        try {
+          return json({ steps: JSON.parse(text) })
+        } catch {
+          console.error('breakdown_assignment: JSON.parse failed, raw output:', text.slice(0, 300))
+          return json({ error: 'AI returned non-JSON output for breakdown_assignment', detail: text.slice(0, 300) }, 502)
+        }
       }
 
       default:
