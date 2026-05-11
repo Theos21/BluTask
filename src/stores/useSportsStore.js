@@ -2,17 +2,45 @@ import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 export const useSportsStore = create((set) => ({
+  sports:    [],
   sessions:  [],
   drills:    [],
   equipment: [],
   roster:    [],
 
-  // ── Sessions ────────────────────────────────────────────────
-  fetchSessions: async (userId) => {
+  // ── Sports (teams / seasons) ─────────────────────────────────
+  fetchSports: async (userId) => {
     const { data } = await supabase
-      .from('sports_sessions')
+      .from('sports')
       .select('*')
       .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (data) set({ sports: data })
+  },
+
+  addSport: async (row) => {
+    const { data, error } = await supabase.from('sports').insert([row]).select().single()
+    if (!error) set((s) => ({ sports: [data, ...s.sports] }))
+    return { data, error }
+  },
+
+  updateSport: async (id, updates) => {
+    const { data, error } = await supabase
+      .from('sports').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+    if (!error) set((s) => ({ sports: s.sports.map((x) => (x.id === id ? data : x)) }))
+    return { data, error }
+  },
+
+  deleteSport: async (id) => {
+    const { error } = await supabase.from('sports').delete().eq('id', id)
+    if (!error) set((s) => ({ sports: s.sports.filter((x) => x.id !== id) }))
+    return { error }
+  },
+
+  // ── Sessions ─────────────────────────────────────────────────
+  fetchSessions: async (userId) => {
+    const { data } = await supabase
+      .from('sports_sessions').select('*').eq('user_id', userId)
       .order('date', { ascending: false })
     if (data) set({ sessions: data })
   },
@@ -25,8 +53,7 @@ export const useSportsStore = create((set) => ({
 
   updateSession: async (id, updates) => {
     const { data, error } = await supabase
-      .from('sports_sessions')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .from('sports_sessions').update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id).select().single()
     if (!error) set((s) => ({ sessions: s.sessions.map((x) => (x.id === id ? data : x)) }))
     return { data, error }
@@ -38,12 +65,10 @@ export const useSportsStore = create((set) => ({
     return { error }
   },
 
-  // ── Drills ──────────────────────────────────────────────────
+  // ── Drills ───────────────────────────────────────────────────
   fetchDrills: async (userId) => {
     const { data } = await supabase
-      .from('sports_drills')
-      .select('*')
-      .eq('user_id', userId)
+      .from('sports_drills').select('*').eq('user_id', userId)
       .order('position', { ascending: true })
     if (data) set({ drills: data })
   },
@@ -67,12 +92,10 @@ export const useSportsStore = create((set) => ({
     return { error }
   },
 
-  // ── Equipment ───────────────────────────────────────────────
+  // ── Equipment ────────────────────────────────────────────────
   fetchEquipment: async (userId) => {
     const { data } = await supabase
-      .from('sports_equipment')
-      .select('*')
-      .eq('user_id', userId)
+      .from('sports_equipment').select('*').eq('user_id', userId)
       .order('created_at', { ascending: true })
     if (data) set({ equipment: data })
   },
@@ -103,12 +126,10 @@ export const useSportsStore = create((set) => ({
     return { error }
   },
 
-  // ── Roster ──────────────────────────────────────────────────
+  // ── Roster ───────────────────────────────────────────────────
   fetchRoster: async (userId) => {
     const { data } = await supabase
-      .from('sports_roster')
-      .select('*')
-      .eq('user_id', userId)
+      .from('sports_roster').select('*').eq('user_id', userId)
       .order('name', { ascending: true })
     if (data) set({ roster: data })
   },
