@@ -161,6 +161,15 @@ workflows:
           xcode-project use-profiles \
             --profile /tmp/blutask_appstore.mobileprovision
 
+      - name: Set build number
+        script: |
+          # Use total git commit count as the build number — always higher than the
+          # previous build as long as at least one commit is added between uploads.
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          echo "Build number: $BUILD_NUMBER"
+          cd ios/App
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+
       - name: Build IPA
         script: |
           set -eo pipefail
