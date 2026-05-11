@@ -151,23 +151,45 @@ export default function App() {
     async function processOAuthUrl(url) {
       if (!url?.startsWith('com.blutask.app://')) return
 
-      console.log('[OAuth] Callback URL received:', url)
+      console.log('[OAuth] Raw callback URL:', url)
 
       // Signal Auth.jsx that a real callback arrived — distinguishes from user cancellation.
       markOAuthCallbackReceived()
 
-      // Supabase can return tokens two ways:
-      //   Implicit flow → tokens in hash:  #access_token=...&refresh_token=...
-      //   PKCE flow     → code in query:   ?code=...
-      const hashParams  = new URLSearchParams(url.includes('#') ? url.split('#')[1] : '')
-      const queryParams = new URLSearchParams(url.includes('?') ? url.split('?')[1].split('#')[0] : '')
+      // iOS can deliver the URL with an extra layer of percent-encoding applied to
+      // the entire string. Attempt one decode pass; keep the result only if it still
+      // starts with our scheme (sanity check) and doesn't break the structure.
+      let workingUrl = url
+      try {
+        const once = decodeURIComponent(url)
+        if (once.startsWith('com.blutask.app://')) {
+          workingUrl = once
+          console.log('[OAuth] URL needed a decode pass:', workingUrl)
+        }
+      } catch { /* url is already clean */ }
 
-      console.log('[OAuth] Hash params:', Object.fromEntries(hashParams.entries()))
+      // Use the URL API for robust parameter extraction (replace custom scheme
+      // temporarily — the URL constructor requires a known scheme).
+      let queryParams = new URLSearchParams()
+      let hashParams  = new URLSearchParams()
+      try {
+        const parsed = new URL(workingUrl.replace(/^com\.blutask\.app:\/\//, 'https://x.app/'))
+        queryParams  = parsed.searchParams
+        if (parsed.hash) hashParams = new URLSearchParams(parsed.hash.slice(1))
+      } catch {
+        // Fallback to manual splitting if URL API rejects the string
+        const q = workingUrl.includes('?') ? workingUrl.split('?')[1]?.split('#')[0] ?? '' : ''
+        const h = workingUrl.includes('#') ? workingUrl.split('#')[1] : ''
+        queryParams = new URLSearchParams(q)
+        hashParams  = new URLSearchParams(h)
+      }
+
       console.log('[OAuth] Query params:', Object.fromEntries(queryParams.entries()))
+      console.log('[OAuth] Hash params:',  Object.fromEntries(hashParams.entries()))
 
-      const urlError = hashParams.get('error') || queryParams.get('error')
+      const urlError = queryParams.get('error') || hashParams.get('error')
       if (urlError) {
-        let desc = hashParams.get('error_description') || queryParams.get('error_description') || ''
+        let desc = queryParams.get('error_description') || hashParams.get('error_description') || ''
         try { desc = decodeURIComponent(desc) } catch { /* already clean */ }
         console.log('[OAuth] Error in callback URL:', urlError, desc)
         dispatchOAuthError(desc || urlError)
@@ -191,19 +213,24 @@ export default function App() {
       }
 
       // ── PKCE / auth-code flow ────────────────────────────────────────────
-      // Also handle code in hash fragment (some Supabase versions use #code=)
       const rawCode = queryParams.get('code') || hashParams.get('code')
       if (rawCode) {
-        // URLSearchParams.get() decodes %XX once. Apple sometimes delivers a
-        // double-encoded code (e.g. %253A instead of %3A), leaving a literal %3A
-        // in rawCode. A second decodeURIComponent() pass fixes that without
-        // affecting already-clean codes.
+        // URLSearchParams.get() already decodes %XX once. Apply a second pass to
+        // handle any double-encoded characters (e.g. %253A → %3A → :).
+        // Only accept the decoded result if it differs AND has no remaining % sequences.
         let code = rawCode
-        try { code = decodeURIComponent(rawCode) } catch { /* rawCode already clean */ }
+        try {
+          const decoded = decodeURIComponent(rawCode)
+          if (decoded !== rawCode) {
+            console.log('[OAuth] Code required extra decode pass')
+            code = decoded
+          }
+        } catch { /* rawCode is already clean */ }
 
-        console.log('[OAuth] PKCE flow — raw code:', rawCode)
-        console.log('[OAuth] PKCE flow — decoded code:', code)
-        console.log('[OAuth] PKCE flow — code length (raw/decoded):', rawCode.length, '/', code.length)
+        console.log('[OAuth] PKCE — raw code   :', rawCode)
+        console.log('[OAuth] PKCE — clean code :', code)
+        console.log('[OAuth] PKCE — lengths (raw/clean):', rawCode.length, '/', code.length)
+
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           console.log('[OAuth] exchangeCodeForSession failed:', error.message)
