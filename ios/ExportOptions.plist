@@ -6,6 +6,13 @@
   <string>app-store-connect</string>
   <key>signingStyle</key>
   <string>manual</string>
+  <key>teamID</key>
+  <string>9FXRBZ9H3L</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.blutask.app</key>
+    <string>BluTask App Store Distribution</string>
+  </dict>
   <key>stripSwiftSymbols</key>
   <true/>
   <key>uploadSymbols</key>
