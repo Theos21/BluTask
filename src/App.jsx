@@ -191,13 +191,18 @@ export default function App() {
 
       // ── PKCE / auth-code flow ────────────────────────────────────────────
       // Also handle code in hash fragment (some Supabase versions use #code=)
-      const code = queryParams.get('code') || hashParams.get('code')
-      if (code) {
-        // exchangeCodeForSession passes its argument directly as `auth_code` in the
-        // POST body — it does NOT parse URLs. Passing the full custom-scheme URL
-        // causes Supabase to send "com.blutask.app://..." as the auth_code and
-        // Apple rejects it. Always pass the decoded code string.
-        console.log('[OAuth] PKCE flow — exchangeCodeForSession, code length:', code.length)
+      const rawCode = queryParams.get('code') || hashParams.get('code')
+      if (rawCode) {
+        // URLSearchParams.get() decodes %XX once. Apple sometimes delivers a
+        // double-encoded code (e.g. %253A instead of %3A), leaving a literal %3A
+        // in rawCode. A second decodeURIComponent() pass fixes that without
+        // affecting already-clean codes.
+        let code = rawCode
+        try { code = decodeURIComponent(rawCode) } catch { /* rawCode already clean */ }
+
+        console.log('[OAuth] PKCE flow — raw code:', rawCode)
+        console.log('[OAuth] PKCE flow — decoded code:', code)
+        console.log('[OAuth] PKCE flow — code length (raw/decoded):', rawCode.length, '/', code.length)
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           console.log('[OAuth] exchangeCodeForSession failed:', error.message)

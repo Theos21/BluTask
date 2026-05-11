@@ -11,6 +11,7 @@ import { useTaskStore } from '../../stores/useTaskStore'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useTagStore } from '../../stores/useTagStore'
 import UpdaterBanner from '../UpdaterBanner'
+import Avatar from '../ui/Avatar'
 
 // ─── badge counts (mirrors Sidebar logic) ───────────────────────────────────
 function useBadges() {
@@ -79,13 +80,6 @@ export default function MobileLayout() {
   // Close sheet on route change
   useEffect(() => { setSheetOpen(false) }, [pathname])
 
-  const initials = (() => {
-    const parts = (profile?.full_name || '').trim().split(/\s+/)
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    const first = profile?.display_name || user?.email?.split('@')[0] || ''
-    return first.slice(0, 2).toUpperCase() || 'BT'
-  })()
-
   const displayName = profile?.full_name || profile?.display_name || user?.email || ''
 
   function isActive(path) {
@@ -141,7 +135,7 @@ export default function MobileLayout() {
           onClick={() => setSheetOpen(o => !o)}
         >
           <span className="mob-tab-icon-wrap">
-            <span className="mob-avatar-sm">{initials}</span>
+            <Avatar profile={profile} email={user?.email} size="xs" />
           </span>
           <span className="mob-tab-label">More</span>
         </button>
@@ -156,7 +150,7 @@ export default function MobileLayout() {
 
             {/* User info */}
             <div className="mob-sheet-user">
-              <div className="mob-avatar-lg">{initials}</div>
+              <Avatar profile={profile} email={user?.email} size="lg" />
               <div className="mob-sheet-user-info">
                 <div className="mob-sheet-name">{displayName}</div>
                 {profile?.full_name && (

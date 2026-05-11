@@ -162,9 +162,9 @@ function AppMockup() {
         </div>
 
         {/* Body */}
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 520 }}>
+        <div className="landing-mock-body" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 520 }}>
           {/* Sidebar */}
-          <aside style={{ background: T.bg, borderRight: `1px solid ${T.hairline}`, padding: '14px 10px', fontSize: 12.5 }}>
+          <aside className="landing-mock-side" style={{ background: T.bg, borderRight: `1px solid ${T.hairline}`, padding: '14px 10px', fontSize: 12.5 }}>
             <div style={{ fontWeight: 700, fontSize: 14, padding: '4px 10px 14px', letterSpacing: '-0.02em' }}>
               <span style={{ color: T.blue }}>Blu</span><span style={{ color: T.fg }}>Task</span>
             </div>
@@ -336,11 +336,11 @@ export default function Landing() {
 
       {/* ── Nav ───────────────────────────────────────────────────────────── */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(14px)', background: 'rgba(26,31,46,0.72)', borderBottom: `1px solid ${T.hairline}` }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', height: 64, display: 'flex', alignItems: 'center', gap: 36 }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', height: 64, display: 'flex', alignItems: 'center', gap: 36 }}>
           <a href="#" style={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700, fontSize: 17, letterSpacing: '-0.02em', textDecoration: 'none' }}>
             <span style={{ color: T.blue }}>Blu</span><span style={{ color: T.fg }}>Task</span>
           </a>
-          <nav style={{ display: 'flex', gap: 28, fontSize: 14, color: T.fg2, fontWeight: 500 }}>
+          <nav className="landing-nav-links" style={{ display: 'flex', gap: 28, fontSize: 14, color: T.fg2, fontWeight: 500 }}>
             <a href="#features" style={{ color: T.fg2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ color: T.fg2, textDecoration: 'none' }}>How it works</a>
             <a href="#platforms" style={{ color: T.fg2, textDecoration: 'none' }}>Download</a>
@@ -353,12 +353,12 @@ export default function Landing() {
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '88px 0 24px', overflow: 'hidden' }}>
+      <section className="landing-hero" style={{ position: 'relative', padding: '88px 0 24px', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: 'radial-gradient(700px circle at 50% -10%, rgba(110,168,255,0.18), transparent 60%), radial-gradient(500px circle at 80% 20%, rgba(167,139,250,0.10), transparent 60%)',
         }} />
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px', position: 'relative', zIndex: 1, textAlign: 'center' }}>
           <h1 style={{ margin: '0 0 20px', fontSize: 'clamp(40px,6.5vw,76px)', fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.02, color: T.fg }}>
             Your life,<br />
             <span style={{ background: 'linear-gradient(180deg, #cfdcff, #4d7fd9)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
@@ -368,7 +368,7 @@ export default function Landing() {
           <p style={{ fontSize: 'clamp(16px,1.6vw,19px)', color: T.fg2, maxWidth: 580, margin: '0 auto 36px' }}>
             Tasks, school, and entertainment, all in one focused space. BluTask is the calm, opinionated home for everything you're working on.
           </p>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 56 }}>
+          <div className="landing-hero-cta" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 56 }}>
             <a href={WINDOWS_DOWNLOAD_URL} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 24px', borderRadius: 10, fontSize: 15, fontWeight: 600, background: T.blue, color: '#0b1220', border: `1px solid ${T.blue}`, textDecoration: 'none', cursor: 'pointer' }}>
               <WinIcon />
               Download for Windows
@@ -382,8 +382,8 @@ export default function Landing() {
       </section>
 
       {/* ── Features ──────────────────────────────────────────────────────── */}
-      <section id="features" style={{ padding: '100px 0' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
+      <section id="features" className="landing-section" style={{ padding: '100px 0' }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <SectionLabel>FEATURES</SectionLabel>
             <SectionH2>Everything you need,<br />beautifully organized.</SectionH2>
@@ -392,7 +392,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <div className="landing-feat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             <FeatCard
               iconColor={T.green} iconBg="rgba(76,194,141,.14)"
               iconSvg='<path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>'
@@ -473,8 +473,8 @@ export default function Landing() {
       </section>
 
       {/* ── How it works ──────────────────────────────────────────────────── */}
-      <section id="how" style={{ padding: '100px 0', borderTop: `1px solid ${T.hairline}` }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
+      <section id="how" className="landing-section" style={{ padding: '100px 0', borderTop: `1px solid ${T.hairline}` }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <SectionLabel>HOW IT WORKS</SectionLabel>
             <SectionH2>Simple by design,<br />powerful in practice.</SectionH2>
@@ -483,7 +483,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="landing-how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             <HowCard
               step="01"
               title="Create your spaces"
@@ -543,8 +543,8 @@ export default function Landing() {
       </section>
 
       {/* ── Platforms ─────────────────────────────────────────────────────── */}
-      <section id="platforms" style={{ padding: '100px 0', borderTop: `1px solid ${T.hairline}` }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
+      <section id="platforms" className="landing-section" style={{ padding: '100px 0', borderTop: `1px solid ${T.hairline}` }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <SectionLabel>PLATFORMS</SectionLabel>
             <SectionH2>Available where<br />you work.</SectionH2>
@@ -553,7 +553,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="landing-plat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             <PlatCard
               iconSvg='<circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"></path>'
               title="Web"
@@ -584,7 +584,7 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────────────────── */}
-      <section style={{ textAlign: 'center', padding: '100px 0 120px', position: 'relative' }}>
+      <section className="landing-section" style={{ textAlign: 'center', padding: '100px 0 120px', position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px circle at 50% 50%, rgba(59,111,214,0.12), transparent 60%)', pointerEvents: 'none' }} />
         <div style={{ maxWidth: 920, margin: '0 auto', padding: '0 28px', position: 'relative', zIndex: 1 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 'clamp(32px,5vw,52px)', fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.05, color: T.fg }}>
@@ -593,7 +593,7 @@ export default function Landing() {
           <p style={{ color: T.fg2, fontSize: 17, maxWidth: 460, margin: '0 auto 32px' }}>
             Your life, organized. One quiet, focused space for everything you're working on.
           </p>
-          <div style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div className="landing-final-cta" style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             <a href={WINDOWS_DOWNLOAD_URL} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 24px', borderRadius: 10, fontSize: 15, fontWeight: 600, background: T.blue, color: '#0b1220', border: `1px solid ${T.blue}`, textDecoration: 'none', cursor: 'pointer' }}>
               <WinIcon />
               Download for Windows
@@ -607,9 +607,9 @@ export default function Landing() {
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer id="about" style={{ padding: '56px 0 40px', borderTop: `1px solid ${T.hairline}`, background: 'linear-gradient(180deg, transparent, #161b28)' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 40, marginBottom: 36 }}>
-            <div style={{ maxWidth: 260 }}>
+        <div className="landing-inner" style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
+          <div className="landing-foot-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 40, marginBottom: 36 }}>
+            <div className="landing-foot-brand" style={{ maxWidth: 260 }}>
               <a href="#" style={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700, fontSize: 17, letterSpacing: '-0.02em', textDecoration: 'none' }}>
                 <span style={{ color: T.blue }}>Blu</span><span style={{ color: T.fg }}>Task</span>
               </a>
@@ -629,7 +629,7 @@ export default function Landing() {
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 28, borderTop: `1px solid ${T.hairline}`, fontSize: 12.5, color: T.fg3 }}>
+          <div className="landing-foot-bottom" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 28, borderTop: `1px solid ${T.hairline}`, fontSize: 12.5, color: T.fg3 }}>
             <span>© 2026 BluTask, Inc.</span>
             <span>Made with <span style={{ color: T.pink }}>♥</span> for people who want their head clear.</span>
           </div>
@@ -639,19 +639,28 @@ export default function Landing() {
       {/* ── Mobile responsive overrides ─────────────────────────────────── */}
       <style>{`
         @media (max-width: 900px) {
-          .landing-feat-grid  { grid-template-columns: 1fr !important; }
-          .landing-how-grid   { grid-template-columns: 1fr !important; }
-          .landing-plat-grid  { grid-template-columns: 1fr !important; }
-          .landing-foot-grid  { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-          .landing-foot-brand { grid-column: 1 / -1 !important; max-width: none !important; }
-          .landing-mock-side  { display: none !important; }
-          .landing-mock-body  { grid-template-columns: 1fr !important; min-height: 0 !important; }
-          .landing-nav-links  { display: none !important; }
+          .landing-feat-grid   { grid-template-columns: 1fr !important; }
+          .landing-how-grid    { grid-template-columns: 1fr !important; }
+          .landing-plat-grid   { grid-template-columns: 1fr !important; }
+          .landing-foot-grid   { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+          .landing-foot-brand  { grid-column: 1 / -1 !important; max-width: none !important; }
+          .landing-mock-side   { display: none !important; }
+          .landing-mock-body   { grid-template-columns: 1fr !important; min-height: 0 !important; }
+          .landing-nav-links   { display: none !important; }
           .landing-foot-bottom { flex-direction: column !important; gap: 12px !important; text-align: center !important; }
+          .landing-section     { padding-top: 64px !important; padding-bottom: 64px !important; }
+          .landing-hero        { padding-top: 56px !important; padding-bottom: 16px !important; }
+          .landing-inner       { padding-left: 20px !important; padding-right: 20px !important; }
         }
         @media (max-width: 540px) {
-          .landing-hero-cta   { flex-direction: column !important; width: 100% !important; }
-          .landing-final-cta  { flex-direction: column !important; width: 100% !important; }
+          .landing-hero-cta    { flex-direction: column !important; display: flex !important; width: 100% !important; }
+          .landing-hero-cta a  { justify-content: center !important; }
+          .landing-final-cta   { flex-direction: column !important; display: flex !important; width: 100% !important; }
+          .landing-final-cta a { justify-content: center !important; }
+          .landing-section     { padding-top: 48px !important; padding-bottom: 48px !important; }
+          .landing-hero        { padding-top: 40px !important; padding-bottom: 8px !important; }
+          .landing-inner       { padding-left: 16px !important; padding-right: 16px !important; }
+          .landing-foot-grid   { grid-template-columns: 1fr !important; }
         }
       `}</style>
 

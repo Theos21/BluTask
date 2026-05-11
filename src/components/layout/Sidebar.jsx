@@ -4,6 +4,7 @@ import {
   Archive, Settings, Sun, Moon, LogOut, X, Search,
   Plus, Inbox, Star, Clock,
 } from 'lucide-react'
+import Avatar from '../ui/Avatar'
 import { isToday, isPast, addDays, startOfDay } from 'date-fns'
 import { useAppStore } from '../../stores/useAppStore'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -91,11 +92,6 @@ export default function AppSidebar({ onClose }) {
     || profile?.full_name?.split(' ')[0]
     || user?.email?.split('@')[0]
     || ''
-  const initials = (() => {
-    const parts = (profile?.full_name || '').trim().split(/\s+/)
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    return firstName.slice(0, 2).toUpperCase() || 'BT'
-  })()
 
   const activeTasks = tasks.filter(t => !t.completed)
   const inboxCount = activeTasks.filter(t => !t.list_id).length
@@ -264,7 +260,7 @@ export default function AppSidebar({ onClose }) {
 
       {/* Footer */}
       <div className="sb-foot">
-        <div className="sb-avatar">{initials}</div>
+        <Avatar profile={profile} email={user?.email} size="sm" />
         <div className="sb-foot-info">
           <div className="sb-foot-name">{firstName || 'Account'}</div>
           <button

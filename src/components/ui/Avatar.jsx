@@ -31,22 +31,26 @@ export default function Avatar({ profile, email, size = 'md', className = '' }) 
     )
   }
 
-  // First letter of first name, fallback to email initial
-  const firstName = profile?.full_name?.trim().split(/\s+/)[0] || ''
+  // First + last initials, fallback to first two chars of email
+  const nameParts = (profile?.full_name || '').trim().split(/\s+/).filter(Boolean)
   const fallbackEmail = email || profile?.email || ''
-  const initial = (firstName[0] || fallbackEmail[0] || '?').toUpperCase()
+  const initials = (() => {
+    if (nameParts.length >= 2) return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+    if (nameParts[0]) return nameParts[0].slice(0, 2).toUpperCase()
+    return (fallbackEmail.slice(0, 2) || '?').toUpperCase()
+  })()
 
   // Color: explicit pick overrides deterministic
   const bg = url?.startsWith('color:')
     ? url.slice(6)
-    : deterministicColor(firstName || fallbackEmail)
+    : deterministicColor(nameParts[0] || fallbackEmail)
 
   return (
     <div
       className={`${sizes[size]} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0 select-none ${className}`}
       style={{ backgroundColor: bg }}
     >
-      {initial}
+      {initials}
     </div>
   )
 }
