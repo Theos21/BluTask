@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import {
+  scheduleTaskReminders,
+  cancelTaskReminders,
+} from '../services/localNotifications'
 
 export const useTaskStore = create((set) => ({
   lists: [],
@@ -116,7 +120,10 @@ export const useTaskStore = create((set) => ({
       .insert([taskData])
       .select()
       .single()
-    if (!error) set((s) => ({ tasks: [data, ...s.tasks] }))
+    if (!error) {
+      set((s) => ({ tasks: [data, ...s.tasks] }))
+      if (data.due_date) scheduleTaskReminders(data).catch(() => {})
+    }
     return { data, error }
   },
 
@@ -127,8 +134,13 @@ export const useTaskStore = create((set) => ({
       .eq('id', id)
       .select()
       .single()
-    if (!error)
+    if (!error) {
       set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? data : t)) }))
+      if ('due_date' in updates) {
+        cancelTaskReminders(id).catch(() => {})
+        if (data.due_date && !data.completed) scheduleTaskReminders(data).catch(() => {})
+      }
+    }
     return { data, error }
   },
 
@@ -144,14 +156,20 @@ export const useTaskStore = create((set) => ({
       .eq('id', id)
       .select()
       .single()
-    if (!error)
+    if (!error) {
       set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? data : t)) }))
+      if (completed) cancelTaskReminders(id).catch(() => {})
+      else if (data.due_date) scheduleTaskReminders(data).catch(() => {})
+    }
     return { data, error }
   },
 
   deleteTask: async (id) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id)
-    if (!error) set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
+    if (!error) {
+      set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
+      cancelTaskReminders(id).catch(() => {})
+    }
     return { error }
   },
 

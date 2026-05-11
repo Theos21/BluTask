@@ -5,6 +5,11 @@ import { useAppStore } from './stores/useAppStore'
 import { supabase } from './lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { initPushNotifications, savePushToken } from './services/notifications'
+import {
+  requestWebPermission,
+  rescheduleAll,
+  addLocalNotificationListener,
+} from './services/localNotifications'
 import AppLayout from './components/layout/AppLayout'
 import MobileLayout from './components/layout/MobileLayout'
 import { isCapacitor } from './hooks/useMobileApp'
@@ -85,11 +90,40 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return
+    // APNs remote push token registration
     initPushNotifications().then((token) => {
       if (!token) return
       savePushToken(supabase, user.id, token, Capacitor.getPlatform())
     }).catch(() => {})
   }, [user])
+
+  // Local notifications: request permission + re-sync scheduled notifications
+  // after login so they survive app reinstalls and preference changes.
+  useEffect(() => {
+    if (!user || !isCapacitor) return
+    let removeListener = () => {}
+
+    async function setupLocalNotifications() {
+      const granted = await requestWebPermission()
+      if (!granted) return
+
+      // Re-sync all scheduled notifications against current DB state
+      const [{ data: tasks }, { data: assignments }, { data: prefs }] = await Promise.all([
+        supabase.from('tasks').select('id, title, due_date, completed').eq('user_id', user.id).eq('completed', false),
+        supabase.from('assignments').select('id, title, due_date, completed').eq('user_id', user.id).eq('completed', false),
+        supabase.from('notification_preferences').select('*').eq('user_id', user.id).maybeSingle(),
+      ])
+      await rescheduleAll(tasks ?? [], assignments ?? [], prefs ?? {})
+
+      // Show in-app toast when a notification fires while the app is open
+      removeListener = await addLocalNotificationListener((notification) => {
+        console.log('[LocalNotification] received in foreground:', notification.title)
+      })
+    }
+
+    setupLocalNotifications().catch(() => {})
+    return () => removeListener()
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Capacitor OAuth callback — runs at root so it's always active regardless of route.
   // Handles both cold-start (app killed, URL scheme re-launches it) via getLaunchUrl()

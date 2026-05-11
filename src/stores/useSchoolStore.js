@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import {
+  scheduleAssignmentReminders,
+  cancelAssignmentReminders,
+} from '../services/localNotifications'
 
 export const useSchoolStore = create((set, get) => ({
   classes: [],
@@ -63,7 +67,10 @@ export const useSchoolStore = create((set, get) => ({
       .insert([assignmentData])
       .select()
       .single()
-    if (!error) set((s) => ({ assignments: [...s.assignments, data] }))
+    if (!error) {
+      set((s) => ({ assignments: [...s.assignments, data] }))
+      if (data.due_date) scheduleAssignmentReminders(data).catch(() => {})
+    }
     return { data, error }
   },
 
@@ -74,17 +81,24 @@ export const useSchoolStore = create((set, get) => ({
       .eq('id', id)
       .select()
       .single()
-    if (!error)
+    if (!error) {
       set((s) => ({
         assignments: s.assignments.map((a) => (a.id === id ? data : a)),
       }))
+      if ('due_date' in updates) {
+        cancelAssignmentReminders(id).catch(() => {})
+        if (data.due_date && !data.completed) scheduleAssignmentReminders(data).catch(() => {})
+      }
+    }
     return { data, error }
   },
 
   deleteAssignment: async (id) => {
     const { error } = await supabase.from('assignments').delete().eq('id', id)
-    if (!error)
+    if (!error) {
       set((s) => ({ assignments: s.assignments.filter((a) => a.id !== id) }))
+      cancelAssignmentReminders(id).catch(() => {})
+    }
     return { error }
   },
 
@@ -103,6 +117,7 @@ export const useSchoolStore = create((set, get) => ({
       .select()
       .single()
     console.log('[completeAssignment] DB result - error:', error, 'data:', data)
+    if (!error) cancelAssignmentReminders(id).catch(() => {})
     return { data, error }
   },
 
@@ -125,8 +140,10 @@ export const useSchoolStore = create((set, get) => ({
       .eq('id', id)
       .select()
       .single()
-    if (!error)
+    if (!error) {
       set((s) => ({ assignments: s.assignments.map((a) => (a.id === id ? data : a)) }))
+      if (data.due_date) scheduleAssignmentReminders(data).catch(() => {})
+    }
     return { data, error }
   },
 }))

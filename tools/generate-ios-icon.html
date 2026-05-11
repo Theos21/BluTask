@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BluTask iOS Icon Generator</title>
+<style>
+  body { background: #111; color: #fff; font-family: system-ui; display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 24px; }
+  canvas { border-radius: 22%; box-shadow: 0 8px 40px #0006; }
+  button { background: #3b82f6; color: #fff; border: none; border-radius: 10px; padding: 14px 32px; font-size: 16px; cursor: pointer; font-weight: 600; }
+  button:hover { background: #2563eb; }
+  p { color: #888; font-size: 13px; margin: 0; }
+</style>
+</head>
+<body>
+<h2>BluTask — iOS App Icon (1024×1024)</h2>
+<canvas id="c" width="1024" height="1024"></canvas>
+<button onclick="download()">Download AppIcon-512@2x.png</button>
+<p>Save this file to: ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png</p>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const S = 1024;
+
+// Background — dark navy
+ctx.fillStyle = '#1a1f2e';
+ctx.fillRect(0, 0, S, S);
+
+// Scale factor: icon elements designed at 108dp unit space, scaled to 1024px
+// Safe zone in 108dp space: 21dp to 87dp (66dp wide)
+// In 1024px: scale = 1024/108 ≈ 9.481
+const scale = S / 108;
+
+ctx.strokeStyle = '#3b82f6';
+ctx.lineWidth = 9.5 * scale;
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+ctx.fillStyle = '#3b82f6';
+
+// Checkmark: M35.2,57.1 L48.1,68.7 L68.7,44.2  (in 108dp space)
+ctx.beginPath();
+ctx.moveTo(35.2 * scale, 57.1 * scale);
+ctx.lineTo(48.1 * scale, 68.7 * scale);
+ctx.lineTo(68.7 * scale, 44.2 * scale);
+ctx.stroke();
+
+// Waypoint dot at (76.3, 36.5) radius 4.1 (in 108dp space)
+ctx.beginPath();
+ctx.arc(76.3 * scale, 36.5 * scale, 4.1 * scale, 0, Math.PI * 2);
+ctx.fill();
+
+function download() {
+  const a = document.createElement('a');
+  a.download = 'AppIcon-512@2x.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

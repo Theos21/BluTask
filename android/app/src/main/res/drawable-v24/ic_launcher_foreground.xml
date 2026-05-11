@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  BluTask icon foreground — "the flick + waypoint"
+  Scaled to the 66dp safe zone (21dp offset each side in the 108dp adaptive icon viewport).
+  Source geometry: 1024x1024 SVG, scale=0.0645, offset=+21
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Checkmark stroke with rounded caps and join -->
+    <path
+        android:pathData="M35.2,57.1 L48.1,68.7 L68.7,44.2"
+        android:strokeColor="#3b82f6"
+        android:strokeWidth="9.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Waypoint dot — the differentiating accent -->
+    <path
+        android:pathData="M76.3,36.5 m-4.1,0 a4.1,4.1 0 1,0 8.2,0 a4.1,4.1 0 1,0 -8.2,0"
+        android:fillColor="#3b82f6"/>
+
+</vector>

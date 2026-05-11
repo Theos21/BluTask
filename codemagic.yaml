@@ -82,17 +82,14 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
-  # ── App Store — Codemagic automatic code signing ─────────────────────────
+  # ── App Store — manual signing, download IPA → upload via Transporter ──────
   ios-appstore:
     name: iOS App Store
     max_build_duration: 45
     instance_type: mac_mini_m2
     environment:
       groups:
-        - iOS Signing
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.blutask.app
+        - iOS Manual Signing   # CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE
       node: 22
       xcode: latest
       vars:
@@ -137,15 +134,20 @@ workflows:
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME"
 
-      - name: Set up code signing
+      - name: Set up manual code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
+
+          # Import distribution certificate
+          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/dist_cert.p12
+          keychain add-certificates \
+            --certificate /tmp/dist_cert.p12 \
+            --certificate-password "$CM_CERTIFICATE_PASSWORD"
+
+          # Install provisioning profile
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/blutask_appstore.mobileprovision
           xcode-project use-profiles \
-            --custom-export-options '{"method":"app-store"}'
+            --profile /tmp/blutask_appstore.mobileprovision
 
       - name: Build IPA
         script: |
@@ -158,7 +160,8 @@ workflows:
 
           xcode-project build-ipa \
             $BUILD_TARGET \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --custom-export-options '{"method":"app-store","signingStyle":"manual"}'
 
     artifacts:
       - build/ios/ipa/*.ipa

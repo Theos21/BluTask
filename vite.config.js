@@ -16,7 +16,7 @@ function readVersion() {
 }
 const version = readVersion()
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -24,7 +24,13 @@ export default defineConfig({
     },
   },
   define: {
-    // Injected at build time from tauri.conf.json — update version there, not here
     __APP_VERSION__: JSON.stringify(version),
   },
-})
+  esbuild: {
+    // Strip all console.* and debugger statements from production builds
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+  build: {
+    sourcemap: false,
+  },
+}))
