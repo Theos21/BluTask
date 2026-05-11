@@ -23,7 +23,7 @@ function initFromISO(iso) {
   const d = new Date(iso)
   const rawHour = d.getHours()
   const h = rawHour % 12 || 12
-  const m = Math.round(d.getMinutes() / 15) * 15 % 60
+  const m = Math.round(d.getMinutes() / 5) * 5 % 60
   return {
     date: d,
     hour: h.toString().padStart(2, "0"),
@@ -164,7 +164,7 @@ export default function DateTimePicker({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {["00", "15", "30", "45"].map((m) => (
+              {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
             </SelectContent>

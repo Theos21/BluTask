@@ -100,16 +100,35 @@ export default function NotificationsSection() {
   async function handleRequestPermission() {
     setPermLoading(true)
     setPermError(null)
-    const granted = await requestPermission()
-    const status = await getPermissionStatus()
-    setPermStatus(status)
-    setPermLoading(false)
-    if (!granted) {
-      setPermError(
-        status === 'denied'
-          ? 'Blocked — go to device Settings → Apps → BluTask → Notifications and enable them.'
-          : `Not granted (status: ${status}). Try manually in device Settings.`
-      )
+
+    // iOS can suspend JS while the system dialog is open, so setTimeout-based
+    // timeouts inside the plugin may never fire. This UI-level safety net ensures
+    // the button always un-sticks within 30 s regardless of plugin behaviour.
+    const safetyTimer = setTimeout(async () => {
+      const status = await getPermissionStatus().catch(() => 'error')
+      setPermStatus(status)
+      setPermLoading(false)
+      if (status !== 'granted') {
+        setPermError('Permission request timed out. Go to Settings → BluTask → Notifications to enable manually.')
+      }
+    }, 30000)
+
+    try {
+      const granted = await requestPermission()
+      clearTimeout(safetyTimer)
+      const status = await getPermissionStatus()
+      setPermStatus(status)
+      setPermLoading(false)
+      if (!granted) {
+        setPermError(
+          status === 'denied'
+            ? 'Blocked — go to Settings → BluTask → Notifications and enable them.'
+            : 'Permission not granted. Enable notifications in device Settings.'
+        )
+      }
+    } catch {
+      clearTimeout(safetyTimer)
+      setPermLoading(false)
     }
   }
 
