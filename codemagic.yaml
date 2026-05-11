@@ -153,8 +153,11 @@ workflows:
 
       - name: Build IPA
         script: |
-          set -eo pipefail
+          set -o pipefail
           mkdir -p /tmp/xcodebuild_logs
+
+          echo "=== Certificates in keychain ==="
+          security find-identity -v -p codesigning
 
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
@@ -167,6 +170,14 @@ workflows:
             $BUILD_FLAG \
             --scheme "$XCODE_SCHEME" \
             2>&1 | tee /tmp/xcodebuild_logs/build.log
+          BUILD_STATUS=${PIPESTATUS[0]}
+
+          if [ "$BUILD_STATUS" -ne 0 ]; then
+            echo ""
+            echo "=== BUILD FAILED (exit $BUILD_STATUS) — last 150 lines ==="
+            tail -150 /tmp/xcodebuild_logs/build.log
+            exit "$BUILD_STATUS"
+          fi
 
           echo "=== IPA output ==="
           find build/ios/ipa -type f
