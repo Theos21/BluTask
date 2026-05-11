@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { isCapacitor, isIOS } from '../hooks/useMobileApp'
+import { takeOAuthCallbackReceived } from '../lib/oauthCallback'
 
 export default function Auth() {
   const location = useLocation()
@@ -27,9 +28,23 @@ export default function Auth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // When the app returns to foreground on Capacitor, check if OAuth actually
-  // completed. If the user cancelled or the callback silently failed the
-  // button would otherwise stay stuck on "Signing in…" forever.
+  // Listen for OAuth errors dispatched by App.jsx's processOAuthUrl (URL error,
+  // exchangeCodeForSession failure, etc.) so the loading state clears immediately.
+  useEffect(() => {
+    if (!isCapacitor) return
+    const handler = (e) => {
+      setGoogleLoading(false)
+      setAppleLoading(false)
+      setError(e.detail?.message || 'Sign-in failed. Please try again.')
+    }
+    window.addEventListener('blutask-oauth-error', handler)
+    return () => window.removeEventListener('blutask-oauth-error', handler)
+  }, [])
+
+  // Detect genuine user cancellation: if the app returns to foreground WITHOUT
+  // a callback URL having arrived (appUrlOpen never fired), the user dismissed
+  // the Safari sheet. If a callback DID arrive, processOAuthUrl is handling it
+  // and onAuthStateChange will fire on success — don't interfere.
   useEffect(() => {
     if (!isCapacitor) return
     const oauthActive = googleLoading || appleLoading
@@ -40,15 +55,18 @@ export default function Auth() {
       try {
         const { App: CapApp } = await import('@capacitor/app')
         const handle = await CapApp.addListener('appStateChange', async ({ isActive }) => {
-          if (!isActive) return  // app going to background — ignore
-          // Give App.jsx's appUrlOpen handler 1.5 s to process before we check
-          await new Promise((r) => setTimeout(r, 1500))
-          const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
-          if (!session) {
-            setGoogleLoading(false)
-            setAppleLoading(false)
-            setError('Sign-in was cancelled or failed. Please try again.')
+          if (!isActive) return
+          // Short delay so appUrlOpen (which fires before applicationDidBecomeActive
+          // on iOS) has time to call markOAuthCallbackReceived() in the same JS turn.
+          await new Promise((r) => setTimeout(r, 300))
+          if (takeOAuthCallbackReceived()) {
+            // A valid callback URL arrived — let processOAuthUrl + onAuthStateChange handle it.
+            return
           }
+          // No callback URL → user cancelled Safari without completing sign-in.
+          setGoogleLoading(false)
+          setAppleLoading(false)
+          setError('Sign-in was cancelled or failed. Please try again.')
         })
         cleanup = () => handle.remove()
       } catch {

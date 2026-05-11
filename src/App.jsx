@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/useAuthStore'
 import { useAppStore } from './stores/useAppStore'
 import { supabase } from './lib/supabase'
+import { markOAuthCallbackReceived } from './lib/oauthCallback'
 import { Capacitor } from '@capacitor/core'
 import { initPushNotifications, savePushToken } from './services/notifications'
 import {
@@ -143,10 +144,17 @@ export default function App() {
 
     let removeListener = () => {}
 
+    function dispatchOAuthError(message) {
+      window.dispatchEvent(new CustomEvent('blutask-oauth-error', { detail: { message } }))
+    }
+
     async function processOAuthUrl(url) {
       if (!url?.startsWith('com.blutask.app://')) return
 
       console.log('[OAuth] Callback URL received:', url)
+
+      // Signal Auth.jsx that a real callback arrived — distinguishes from user cancellation.
+      markOAuthCallbackReceived()
 
       // Supabase can return tokens two ways:
       //   Implicit flow → tokens in hash:  #access_token=...&refresh_token=...
@@ -159,8 +167,9 @@ export default function App() {
 
       const urlError = hashParams.get('error') || queryParams.get('error')
       if (urlError) {
-        const desc = hashParams.get('error_description') || queryParams.get('error_description')
+        const desc = hashParams.get('error_description') || queryParams.get('error_description') || ''
         console.log('[OAuth] Error in callback URL:', urlError, desc)
+        dispatchOAuthError(desc || urlError)
         return
       }
 
@@ -170,8 +179,10 @@ export default function App() {
         const refresh_token = hashParams.get('refresh_token')
         console.log('[OAuth] Implicit flow — calling setSession()')
         const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
-        if (error) console.log('[OAuth] setSession failed:', error.message)
-        else {
+        if (error) {
+          console.log('[OAuth] setSession failed:', error.message)
+          dispatchOAuthError(error.message)
+        } else {
           console.log('[OAuth] Signed in (implicit):', data?.user?.email)
           await syncOAuthSession()
         }
@@ -186,6 +197,7 @@ export default function App() {
         const { data, error } = await supabase.auth.exchangeCodeForSession(url)
         if (error) {
           console.log('[OAuth] exchangeCodeForSession failed:', error.message)
+          dispatchOAuthError(error.message)
         } else {
           console.log('[OAuth] Signed in (PKCE):', data?.user?.email)
           await syncOAuthSession()
@@ -194,7 +206,7 @@ export default function App() {
       }
 
       console.log('[OAuth] No access_token or code found in callback URL')
-      // Navigation is automatic: onAuthStateChange fires → auth store updates user → AuthRoute redirects to /home
+      dispatchOAuthError('Authentication failed: unexpected callback format.')
     }
 
     ;(async () => {

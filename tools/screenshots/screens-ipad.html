@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>BluTask iPad Screenshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1a1f2e;
+  --bg-2:   #242938;
+  --bg-3:   #2d3446;
+  --bg-4:   #363d52;
+  --fg:     #e2e8f0;
+  --fg-2:   #94a3b8;
+  --fg-3:   #64748b;
+  --fg-4:   #475569;
+  --border: rgba(148,163,184,.10);
+  --hair:   rgba(255,255,255,.05);
+  --blue:   #3b82f6;
+  --blue-2: #60a5fa;
+  --green:  #4cc28d;
+  --violet: #a78bfa;
+  --amber:  #f5b35b;
+  --pink:   #f472b6;
+  --red:    #f87171;
+}
+html { background: #000; }
+body { font-family: 'DM Sans', system-ui, sans-serif; }
+
+/* ── each iPad screen: 1032 × 1376 logical (×2 DPR = 2064×2752) ── */
+.screen {
+  width: 1032px;
+  height: 1376px;
+  position: relative;
+  overflow: hidden;
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-1 { background: radial-gradient(900px at 70% -5%, rgba(59,130,246,.35), transparent 55%), linear-gradient(180deg,#141c2e 0%,#0a0f1c 100%); }
+.screen-2 { background: radial-gradient(900px at 30% -5%, rgba(76,194,141,.28), transparent 55%), linear-gradient(180deg,#0f1a1e 0%,#080f13 100%); }
+.screen-3 { background: radial-gradient(900px at 60% -5%, rgba(167,139,250,.28), transparent 55%), linear-gradient(180deg,#141528 0%,#0c0c1a 100%); }
+
+/* ── marketing cap ── */
+.cap {
+  padding: 56px 64px 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.cap-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--blue-2); margin-bottom: 20px;
+}
+.cap-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.cap h2 {
+  font-size: 48px; font-weight: 800; letter-spacing: -.03em; line-height: 1.08;
+  margin-bottom: 14px;
+}
+.cap p { font-size: 18px; color: var(--fg-2); line-height: 1.5; }
+
+/* ── main app panel ── */
+.panel-wrap {
+  flex: 1;
+  padding: 0 40px 44px;
+  display: flex;
+  min-height: 0;
+}
+.panel {
+  flex: 1;
+  background: var(--bg);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 12px 32px rgba(0,0,0,.35);
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── sidebar ── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px 28px;
+  font-size: 17px; font-weight: 700; color: var(--fg);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo .logo-dot {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--blue); display: grid; place-items: center;
+  font-size: 15px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 20px; font-size: 14px; font-weight: 500;
+  color: var(--fg-3); cursor: pointer; border-radius: 0;
+  transition: background .15s;
+}
+.nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.nav-item.on { color: var(--blue-2); background: rgba(96,165,250,.08); border-right: 2px solid var(--blue-2); }
+.nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--fg-4); padding: 16px 20px 6px; }
+
+/* ── main content area ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 28px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 20px; font-weight: 700; }
+.topbar-sub { font-size: 12px; color: var(--fg-3); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--violet));
+  display: grid; place-items: center; font-size: 13px; font-weight: 700;
+}
+.content { flex: 1; padding: 20px 28px; overflow: hidden; }
+
+/* ── stat cards ── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+}
+.stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--fg-3); }
+.stat .val { font-size: 28px; font-weight: 800; letter-spacing: -.03em; margin-top: 4px; }
+.stat .val small { font-size: 12px; color: var(--fg-3); font-weight: 500; }
+
+/* ── two-column layout ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; height: calc(100% - 120px); }
+.col-card {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.col-card-title {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700;
+  color: var(--fg-3); margin-bottom: 12px; flex-shrink: 0;
+}
+.col-card-title .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── task rows ── */
+.task-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+.task-row:last-child { border-bottom: 0; }
+.cb {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--fg-4); flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.cb.on { background: var(--green); border-color: var(--green); }
+.cb.on::after { content:''; width:8px; height:4px; border-left:2px solid #0b1220; border-bottom:2px solid #0b1220; transform:rotate(-45deg) translateY(-1px); }
+.task-text { flex: 1; font-weight: 500; }
+.task-text.done { color: var(--fg-3); text-decoration: line-through; }
+.chip {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid; flex-shrink: 0;
+}
+.chip-blue  { color: #a8c9ff; border-color: rgba(110,168,255,.35); background: rgba(110,168,255,.09); }
+.chip-vio   { color: #c8b3ff; border-color: rgba(167,139,250,.35); background: rgba(167,139,250,.09); }
+.chip-amb   { color: #f5cf99; border-color: rgba(245,179,91,.35);  background: rgba(245,179,91,.09); }
+.chip-grn   { color: #98e3bf; border-color: rgba(76,194,141,.35);  background: rgba(76,194,141,.09); }
+.chip-pink  { color: #f9b8d0; border-color: rgba(244,114,182,.35); background: rgba(244,114,182,.09); }
+.due {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 2px 7px; border-radius: 5px; flex-shrink: 0;
+  background: rgba(255,255,255,.03); border: 1px solid var(--hair); color: var(--fg-2);
+}
+.due.hot { color: var(--amber); border-color: rgba(245,179,91,.3); background: rgba(245,179,91,.06); }
+.due.red { color: var(--red);   border-color: rgba(248,113,113,.3); background: rgba(248,113,113,.06); }
+
+/* ── progress bar ── */
+.prog-item {
+  background: var(--bg-3); border-left: 3px solid;
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+}
+.prog-item .prog-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.prog-item .prog-bar-bg { height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; }
+.prog-item .prog-bar { height: 4px; border-radius: 2px; }
+.prog-item .prog-meta { display:flex; justify-content:space-between; font-size:10px; color:var(--fg-3); margin-top:5px; font-family:'JetBrains Mono',monospace; }
+
+/* ── assignment card ── */
+.assign-card {
+  background: var(--bg-3); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+  border-left: 3px solid;
+}
+.assign-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:5px; }
+.assign-title { font-size: 13px; font-weight: 600; flex:1; }
+.assign-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.assign-class { font-size:10px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+
+/* ── space cards ── */
+.spaces-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.space-card {
+  background:var(--bg-2); border:1px solid var(--border);
+  border-radius:10px; padding:12px 14px;
+}
+.space-dot { width:8px; height:8px; border-radius:50%; margin-bottom:6px; }
+.space-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+.space-count { font-size:11px; color:var(--fg-3); font-family:'JetBrains Mono',monospace; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SCREEN 1 — HOME DASHBOARD ══════════════ -->
+<div id="ip1" class="screen screen-1">
+  <div class="cap">
+    <div class="cap-eyebrow"><span class="dot"></span>Home<span class="dot"></span></div>
+    <h2>Plan your day in one <span style="color:var(--blue-2)">calm place.</span></h2>
+    <p>Tasks, school, and your schedule — unified and always in sync.</p>
+  </div>
+  <div class="panel-wrap">
+    <div class="panel">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-logo"><div class="logo-dot">📋</div>BluTask</div>
+        <div class="nav-item on">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Tasks
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          School
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </div>
+        <div class="nav-section">Spaces</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></div> Personal</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#4cc28d;flex-shrink:0"></div> School</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#f5b35b;flex-shrink:0"></div> Work</div>
+      </div>
+      <!-- Main -->
+      <div class="main">
+        <div class="topbar">
+          <div>
+            <div class="topbar-title">Good morning, Samer 👋</div>
+            <div class="topbar-sub">Sunday, May 11 · 3 tasks due today</div>
+          </div>
+          <div class="topbar-right">
+            <div class="avatar">S</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="stats-row">
+            <div class="stat"><div class="lbl">Today</div><div class="val">3 <small>tasks</small></div></div>
+            <div class="stat"><div class="lbl">This Week</div><div class="val">11 <small>tasks</small></div></div>
+            <div class="stat"><div class="lbl">Overdue</div><div class="val" style="color:var(--red)">2</div></div>
+            <div class="stat"><div class="lbl">Completed</div><div class="val" style="color:var(--green)">84<small>%</small></div></div>
+          </div>
+          <div class="two-col">
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--blue)"></div>Today's Tasks</div>
+              <div class="task-row"><div class="cb on"></div><span class="task-text done">Morning review</span><span class="chip chip-blue">personal</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Submit lab report</span><span class="due hot">11:59 PM</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Study for quiz</span><span class="chip chip-vio">school</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Reply to emails</span><span class="due">3:00 PM</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Read chapter 7</span><span class="chip chip-amb">reading</span></div>
+              <div class="task-row"><div class="cb on"></div><span class="task-text done">Team standup</span><span class="chip chip-grn">work</span></div>
+            </div>
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--violet)"></div>Spaces Overview</div>
+              <div class="prog-item" style="border-color:var(--blue)">
+                <div class="prog-name">Personal</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:72%;background:var(--blue)"></div></div>
+                <div class="prog-meta"><span>72% done</span><span>4 / 6 tasks</span></div>
+              </div>
+              <div class="prog-item" style="border-color:var(--green)">
+                <div class="prog-name">School</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:45%;background:var(--green)"></div></div>
+                <div class="prog-meta"><span>45% done</span><span>5 / 11 tasks</span></div>
+              </div>
+              <div class="prog-item" style="border-color:var(--amber)">
+                <div class="prog-name">Work</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:88%;background:var(--amber)"></div></div>
+                <div class="prog-meta"><span>88% done</span><span>7 / 8 tasks</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SCREEN 2 — SCHOOL / ASSIGNMENTS ══════════════ -->
+<div id="ip2" class="screen screen-2">
+  <div class="cap">
+    <div class="cap-eyebrow"><span class="dot"></span>School<span class="dot"></span></div>
+    <h2>Every class. Every deadline. <span style="color:var(--green)">Never missed.</span></h2>
+    <p>Track assignments, due dates, and progress across all your classes.</p>
+  </div>
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="sidebar">
+        <div class="sidebar-logo"><div class="logo-dot">📋</div>BluTask</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Tasks
+        </div>
+        <div class="nav-item on">
+          <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          School
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </div>
+        <div class="nav-section">Classes</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></div> Calculus II</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#a78bfa;flex-shrink:0"></div> Physics</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#4cc28d;flex-shrink:0"></div> English Lit</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:#f5b35b;flex-shrink:0"></div> Chemistry</div>
+      </div>
+      <div class="main">
+        <div class="topbar">
+          <div>
+            <div class="topbar-title">School</div>
+            <div class="topbar-sub">4 classes · 9 upcoming assignments</div>
+          </div>
+          <div class="topbar-right"><div class="avatar">S</div></div>
+        </div>
+        <div class="content">
+          <div class="two-col" style="height:100%">
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--red)"></div>Due Soon</div>
+              <div class="assign-card" style="border-color:var(--red)">
+                <div class="assign-top"><div class="assign-title">Lab Report — Velocity</div><span class="due red">Today</span></div>
+                <div class="assign-meta"><span class="assign-class" style="color:#a78bfa">PHYSICS</span><span class="chip chip-vio">lab</span></div>
+              </div>
+              <div class="assign-card" style="border-color:var(--amber)">
+                <div class="assign-top"><div class="assign-title">Problem Set 5</div><span class="due hot">Tomorrow</span></div>
+                <div class="assign-meta"><span class="assign-class" style="color:#60a5fa">CALC II</span><span class="chip chip-blue">homework</span></div>
+              </div>
+              <div class="assign-card" style="border-color:var(--amber)">
+                <div class="assign-top"><div class="assign-title">Essay Draft — Hamlet</div><span class="due hot">May 13</span></div>
+                <div class="assign-meta"><span class="assign-class" style="color:#4cc28d">ENGLISH</span><span class="chip chip-grn">essay</span></div>
+              </div>
+              <div class="assign-card" style="border-color:var(--blue)">
+                <div class="assign-top"><div class="assign-title">Midterm Study Guide</div><span class="due">May 15</span></div>
+                <div class="assign-meta"><span class="assign-class" style="color:#f5b35b">CHEM</span><span class="chip chip-amb">reading</span></div>
+              </div>
+            </div>
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--green)"></div>Class Progress</div>
+              <div class="prog-item" style="border-color:#60a5fa">
+                <div class="prog-name" style="color:#60a5fa">Calculus II</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:60%;background:#60a5fa"></div></div>
+                <div class="prog-meta"><span>3 / 5 done</span><span>Next: Fri</span></div>
+              </div>
+              <div class="prog-item" style="border-color:#a78bfa">
+                <div class="prog-name" style="color:#a78bfa">Physics</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:33%;background:#a78bfa"></div></div>
+                <div class="prog-meta"><span>1 / 3 done</span><span>Next: Today</span></div>
+              </div>
+              <div class="prog-item" style="border-color:#4cc28d">
+                <div class="prog-name" style="color:#4cc28d">English Lit</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:50%;background:#4cc28d"></div></div>
+                <div class="prog-meta"><span>2 / 4 done</span><span>Next: Tue</span></div>
+              </div>
+              <div class="prog-item" style="border-color:#f5b35b">
+                <div class="prog-name" style="color:#f5b35b">Chemistry</div>
+                <div class="prog-bar-bg"><div class="prog-bar" style="width:75%;background:#f5b35b"></div></div>
+                <div class="prog-meta"><span>3 / 4 done</span><span>Next: Thu</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SCREEN 3 — TASKS ══════════════ -->
+<div id="ip3" class="screen screen-3">
+  <div class="cap">
+    <div class="cap-eyebrow"><span class="dot"></span>Tasks<span class="dot"></span></div>
+    <h2>Capture everything. <span style="color:var(--violet)">Nothing slips.</span></h2>
+    <p>Prioritize, organize, and complete tasks across every area of your life.</p>
+  </div>
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="sidebar">
+        <div class="sidebar-logo"><div class="logo-dot">📋</div>BluTask</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Home
+        </div>
+        <div class="nav-item on">
+          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Tasks
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          School
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </div>
+        <div class="nav-section">Filter</div>
+        <div class="nav-item on" style="color:var(--fg-2)"><div style="width:8px;height:8px;border-radius:50%;background:var(--fg-3);flex-shrink:0"></div> All Tasks</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div> High Priority</div>
+        <div class="nav-item"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div> Completed</div>
+      </div>
+      <div class="main">
+        <div class="topbar">
+          <div>
+            <div class="topbar-title">All Tasks</div>
+            <div class="topbar-sub">14 tasks · 6 completed</div>
+          </div>
+          <div class="topbar-right"><div class="avatar">S</div></div>
+        </div>
+        <div class="content">
+          <div class="two-col" style="height:100%">
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--red)"></div>High Priority</div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Submit lab report</span><span class="due red">Today</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Study for Physics quiz</span><span class="due hot">Tomorrow</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Email Professor Chen</span><span class="chip chip-blue">school</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Problem Set 5</span><span class="due hot">May 12</span></div>
+              <div class="task-row"><div class="cb on"></div><span class="task-text done">Morning workout</span><span class="chip chip-grn">personal</span></div>
+              <div class="task-row"><div class="cb on"></div><span class="task-text done">Team standup</span><span class="chip chip-vio">work</span></div>
+            </div>
+            <div class="col-card">
+              <div class="col-card-title"><div class="dot" style="background:var(--blue-2)"></div>Upcoming</div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Read Chapter 7</span><span class="due">May 13</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Essay draft — Hamlet</span><span class="due">May 13</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Grocery shopping</span><span class="chip chip-amb">personal</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Chemistry midterm prep</span><span class="due">May 15</span></div>
+              <div class="task-row"><div class="cb"></div><span class="task-text">Update resume</span><span class="chip chip-pink">work</span></div>
+              <div class="task-row"><div class="cb on"></div><span class="task-text done">Reply to emails</span><span class="chip chip-grn">done</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
