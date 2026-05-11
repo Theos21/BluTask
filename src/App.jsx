@@ -31,6 +31,16 @@ import ResetPassword from './pages/ResetPassword'
 import SharedWatchlist from './pages/Watch/SharedWatchlist'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 
+// Called after any successful OAuth code/token exchange so the auth store
+// stays in sync even if the Supabase onAuthStateChange event fires before
+// the store's own listener is registered (race condition on cold start).
+async function syncOAuthSession() {
+  const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
+  if (!session) return
+  useAuthStore.setState({ session, user: session.user, loading: false })
+  useAuthStore.getState().fetchProfile(session.user.id)
+}
+
 function Spinner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fafbfc] dark:bg-[#0d1117]">
@@ -161,16 +171,25 @@ export default function App() {
         console.log('[OAuth] Implicit flow — calling setSession()')
         const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
         if (error) console.log('[OAuth] setSession failed:', error.message)
-        else console.log('[OAuth] Signed in (implicit):', data?.user?.email)
+        else {
+          console.log('[OAuth] Signed in (implicit):', data?.user?.email)
+          await syncOAuthSession()
+        }
         return
       }
 
       // ── PKCE / auth-code flow ────────────────────────────────────────────
-      if (queryParams.has('code')) {
+      // Also handle code in hash fragment (some Supabase versions use #code=)
+      const code = queryParams.get('code') || hashParams.get('code')
+      if (code) {
         console.log('[OAuth] PKCE flow — calling exchangeCodeForSession()')
         const { data, error } = await supabase.auth.exchangeCodeForSession(url)
-        if (error) console.log('[OAuth] exchangeCodeForSession failed:', error.message)
-        else console.log('[OAuth] Signed in (PKCE):', data?.user?.email)
+        if (error) {
+          console.log('[OAuth] exchangeCodeForSession failed:', error.message)
+        } else {
+          console.log('[OAuth] Signed in (PKCE):', data?.user?.email)
+          await syncOAuthSession()
+        }
         return
       }
 

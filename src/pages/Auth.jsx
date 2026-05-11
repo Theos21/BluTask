@@ -18,10 +18,7 @@ export default function Auth() {
   const { signIn, signUp } = useAuthStore()
   const navigate = useNavigate()
 
-  // Reset all OAuth loading states whenever auth state changes — handles:
-  //   • Successful sign-in via appUrlOpen callback (before redirect fires)
-  //   • User cancelling OAuth and returning to the app
-  //   • Any auth error that doesn't surface through the signInWithOAuth call itself
+  // Reset OAuth loading when auth state changes (success path)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       setGoogleLoading(false)
@@ -29,6 +26,38 @@ export default function Auth() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // When the app returns to foreground on Capacitor, check if OAuth actually
+  // completed. If the user cancelled or the callback silently failed the
+  // button would otherwise stay stuck on "Signing in…" forever.
+  useEffect(() => {
+    if (!isCapacitor) return
+    const oauthActive = googleLoading || appleLoading
+    if (!oauthActive) return
+
+    let cleanup = () => {}
+    ;(async () => {
+      try {
+        const { App: CapApp } = await import('@capacitor/app')
+        const handle = await CapApp.addListener('appStateChange', async ({ isActive }) => {
+          if (!isActive) return  // app going to background — ignore
+          // Give App.jsx's appUrlOpen handler 1.5 s to process before we check
+          await new Promise((r) => setTimeout(r, 1500))
+          const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
+          if (!session) {
+            setGoogleLoading(false)
+            setAppleLoading(false)
+            setError('Sign-in was cancelled or failed. Please try again.')
+          }
+        })
+        cleanup = () => handle.remove()
+      } catch {
+        // @capacitor/app not available — ignore
+      }
+    })()
+
+    return () => cleanup()
+  }, [googleLoading, appleLoading])
 
   async function handleSubmit(e) {
     e.preventDefault()

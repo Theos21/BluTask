@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../../components/ui/Modal'
 import ColorPicker from '../../components/ui/ColorPicker'
 import { useSchoolStore } from '../../stores/useSchoolStore'
@@ -8,13 +8,24 @@ import { CLASS_COLORS } from '../../lib/constants'
 export default function ClassModal({ isOpen, onClose, editClass = null }) {
   const { user } = useAuthStore()
   const { addClass, updateClass } = useSchoolStore()
-  const [name, setName] = useState(editClass?.name || '')
-  const [color, setColor] = useState(editClass?.color || CLASS_COLORS[0].value)
-  const [teacher, setTeacher] = useState(editClass?.teacher || '')
-  const [period, setPeriod] = useState(editClass?.period || '')
-  const [room, setRoom] = useState(editClass?.room || '')
+  const [name, setName] = useState('')
+  const [color, setColor] = useState(CLASS_COLORS[0].value)
+  const [teacher, setTeacher] = useState('')
+  const [period, setPeriod] = useState('')
+  const [room, setRoom] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isOpen) return
+    setName(editClass?.name || '')
+    setColor(editClass?.color || CLASS_COLORS[0].value)
+    setTeacher(editClass?.teacher || '')
+    setPeriod(editClass?.period || '')
+    setRoom(editClass?.room || '')
+    setSaving(false)
+    setError('')
+  }, [isOpen, editClass?.id])
 
   async function handleSubmit(e) {
     e.preventDefault()
