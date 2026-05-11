@@ -1138,6 +1138,10 @@ input, textarea, button { font-family: inherit; color: inherit; }
 .mob-auth-safe {
   padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
 }
+/* Auth page inputs — 16px prevents iOS from zooming on focus */
+.mob-auth-safe input {
+  font-size: 16px;
+}
 
 /* ── Page-level adjustments inside mob-content ──────────── */
 /* Give pages inside the mobile layout comfortable thumb spacing */
