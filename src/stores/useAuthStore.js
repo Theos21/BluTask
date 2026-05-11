@@ -8,15 +8,21 @@ export const useAuthStore = create((set, get) => ({
   loading: true,
 
   init: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    set({ session, user: session?.user ?? null, loading: false })
-    if (session?.user) get().fetchProfile(session.user.id)
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null })
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      set({ session, user: session?.user ?? null, loading: false })
       if (session?.user) get().fetchProfile(session.user.id)
-      else set({ profile: null })
-    })
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        set({ session, user: session?.user ?? null })
+        if (session?.user) get().fetchProfile(session.user.id)
+        else set({ profile: null })
+      })
+    } catch {
+      // Supabase unreachable (missing env vars in build, network error, etc.)
+      // Always clear loading so the app reaches the auth screen instead of hanging.
+      set({ loading: false })
+    }
   },
 
   fetchProfile: async (userId) => {

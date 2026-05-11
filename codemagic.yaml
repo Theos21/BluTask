@@ -8,6 +8,7 @@ workflows:
     environment:
       groups:
         - iOS Signing
+        - App Secrets        # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_TMDB_API_KEY
       ios_signing:
         distribution_type: development
         bundle_identifier: com.blutask.app
@@ -90,6 +91,7 @@ workflows:
     environment:
       groups:
         - iOS Manual Signing   # CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE
+        - App Secrets          # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_TMDB_API_KEY
       node: 22
       xcode: latest
       vars:
