@@ -167,7 +167,8 @@ export default function App() {
 
       const urlError = hashParams.get('error') || queryParams.get('error')
       if (urlError) {
-        const desc = hashParams.get('error_description') || queryParams.get('error_description') || ''
+        let desc = hashParams.get('error_description') || queryParams.get('error_description') || ''
+        try { desc = decodeURIComponent(desc) } catch { /* already clean */ }
         console.log('[OAuth] Error in callback URL:', urlError, desc)
         dispatchOAuthError(desc || urlError)
         return
