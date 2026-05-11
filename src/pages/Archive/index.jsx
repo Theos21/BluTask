@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Archive as ArchiveIcon, CheckCircle2, RotateCcw } from 'lucide-react'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import { Archive as ArchiveIcon, RotateCcw, Pencil } from 'lucide-react'
 import { isToday, isYesterday, isAfter, subDays, startOfDay, format } from 'date-fns'
 import { useTaskStore } from '../../stores/useTaskStore'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { showToast } from '../../lib/toast'
-import { cn } from '../../lib/utils'
-import ColorPill from '../../components/ui/ColorPill'
-import { getTypeByValue, TYPE_PILL_STYLES } from '../../lib/constants'
+import { getTypeByValue } from '../../lib/constants'
 
 function groupByDate(items) {
   const groups = { Today: [], Yesterday: [], 'This week': [], Earlier: [] }
@@ -35,17 +33,29 @@ function SpacePill({ space }) {
   )
 }
 
-function ArchiveRow({ item, onUndo }) {
+function ArchiveRow({ item, onUndo, onEditTime }) {
   const typeObj = item.type ? getTypeByValue(item.type) : null
   const accentColor = item.space === 'school' ? 'oklch(0.72 0.14 295)' : 'oklch(0.72 0.14 150)'
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef(null)
+
+  const completedDate = new Date(item.completed_at || item.updated_at)
+  // datetime-local value format: "YYYY-MM-DDTHH:mm"
+  const dtLocalValue = format(completedDate, "yyyy-MM-dd'T'HH:mm")
+
+  function handleTimeChange(e) {
+    const val = e.target.value
+    if (!val) return
+    const newDate = new Date(val)
+    if (isNaN(newDate.getTime())) return
+    onEditTime(item, newDate.toISOString())
+    setEditing(false)
+  }
 
   return (
     <div className="task task-done" style={{ cursor: 'default' }}>
       <div className="task-grip" />
-      <div
-        className="cb cb-on"
-        style={{ background: accentColor, borderColor: accentColor }}
-      >
+      <div className="cb cb-on" style={{ background: accentColor, borderColor: accentColor }}>
         <span className="cb-inner">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12l5 5L20 7" />
@@ -64,17 +74,47 @@ function ArchiveRow({ item, onUndo }) {
               {item.context}
             </span>
           )}
-          {typeObj && (
-            <span style={{ fontSize: 10.5 }}>{typeObj.label}</span>
-          )}
+          {typeObj && <span style={{ fontSize: 10.5 }}>{typeObj.label}</span>}
         </div>
       </div>
-      <div
-        className="task-due done-time"
-        style={{ color: 'var(--fg-4)', background: 'transparent', border: 'none', fontSize: 11 }}
-      >
-        {format(new Date(item.completed_at || item.updated_at), 'MMM d, h:mma')}
+
+      {/* Completion time — click to edit */}
+      <div className="task-due done-time" style={{ background: 'transparent', border: 'none' }}>
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="datetime-local"
+            defaultValue={dtLocalValue}
+            autoFocus
+            onBlur={handleTimeChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.target.blur() }
+              if (e.key === 'Escape') setEditing(false)
+            }}
+            style={{
+              fontSize: 11, color: 'var(--fg)', background: 'var(--bg-3)',
+              border: '1px solid var(--border-2)', borderRadius: 6,
+              padding: '2px 4px', outline: 'none', width: 160,
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            title="Edit completion time"
+            onClick={() => setEditing(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 11, color: 'var(--fg-4)',
+              background: 'none', border: 0, cursor: 'pointer', padding: 0,
+            }}
+            className="hover:text-[color:var(--fg-2)] transition-colors group"
+          >
+            {format(completedDate, 'MMM d, h:mma')}
+            <Pencil size={9} style={{ opacity: 0.4 }} className="group-hover:opacity-100 transition-opacity" />
+          </button>
+        )}
       </div>
+
       <button
         onClick={() => onUndo(item)}
         className="row-more"
@@ -90,8 +130,8 @@ function ArchiveRow({ item, onUndo }) {
 export default function Archive() {
   const { user, profile } = useAuthStore()
   const showSchool = profile?.show_school ?? true
-  const { tasks, lists, fetchTasks, fetchLists, toggleTask } = useTaskStore()
-  const { assignments, classes, fetchAssignments, fetchClasses, uncompleteAssignment } = useSchoolStore()
+  const { tasks, lists, fetchTasks, fetchLists, toggleTask, updateTask } = useTaskStore()
+  const { assignments, classes, fetchAssignments, fetchClasses, uncompleteAssignment, updateAssignment } = useSchoolStore()
   const [spaceFilter, setSpaceFilter] = useState('all')
 
   // Reset filter to 'all' if school is turned off while 'school' filter is active
@@ -170,6 +210,15 @@ export default function Archive() {
     }
   }
 
+  async function handleEditTime(item, newISO) {
+    if (item.space === 'tasks') {
+      await updateTask(item.id, { completed_at: newISO })
+    } else {
+      await updateAssignment(item.id, { completed_at: newISO })
+    }
+    showToast({ message: 'Completion time updated' })
+  }
+
   const hasAny = filteredItems.length > 0
 
   const filterTabs = [
@@ -233,7 +282,7 @@ export default function Archive() {
                 </div>
                 <div className="task-list">
                   {items.map((item) => (
-                    <ArchiveRow key={`${item.space}-${item.id}`} item={item} onUndo={handleUndo} />
+                    <ArchiveRow key={`${item.space}-${item.id}`} item={item} onUndo={handleUndo} onEditTime={handleEditTime} />
                   ))}
                 </div>
               </div>

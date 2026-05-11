@@ -285,16 +285,19 @@ export default function TaskModal({
               {tags.map((tag) => {
                 const selected = selectedTagIds.includes(tag.id)
                 return (
-                  <div key={tag.id} className="group relative inline-flex">
+                  <div
+                    key={tag.id}
+                    className={`inline-flex items-center gap-0.5 rounded-full border text-[11px] font-medium transition-all ${
+                      selected
+                        ? 'border-transparent'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}
+                    style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
+                  >
                     <button
                       type="button"
                       onClick={() => toggleTag(tag.id)}
-                      className={`text-[11px] px-2.5 py-1 rounded-full font-medium border transition-all pr-5 ${
-                        selected
-                          ? 'border-transparent'
-                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                      style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
+                      className="pl-2.5 pr-1.5 py-1"
                     >
                       {selected && <span className="mr-1">✓</span>}
                       {tag.name}
@@ -306,9 +309,9 @@ export default function TaskModal({
                         deleteTag(tag.id)
                         setSelectedTagIds((prev) => prev.filter((id) => id !== tag.id))
                       }}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-rose-500 transition-all"
+                      className="pr-2 py-1 text-gray-300 dark:text-gray-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
                     >
-                      <X size={10} />
+                      <X size={9} />
                     </button>
                   </div>
                 )
