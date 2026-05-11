@@ -148,6 +148,16 @@ workflows:
             --certificate-password "$CM_CERTIFICATE_PASSWORD"
 
           echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/blutask_appstore.mobileprovision
+
+          # Install profile into the directory Xcode searches at archive time
+          PROFILE_UUID=$(security cms -D -i /tmp/blutask_appstore.mobileprovision \
+            | plutil -extract UUID raw -)
+          echo "Installing provisioning profile UUID: $PROFILE_UUID"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp /tmp/blutask_appstore.mobileprovision \
+            "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+
+          # Update Xcode project build settings to reference this profile
           xcode-project use-profiles \
             --profile /tmp/blutask_appstore.mobileprovision
 
