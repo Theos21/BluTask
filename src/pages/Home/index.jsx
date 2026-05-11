@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format, isToday, isPast, addDays, startOfDay, isSameDay } from 'date-fns'
+import { format, isToday, isPast, addDays, startOfDay, isSameDay, getDay } from 'date-fns'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useTaskStore } from '../../stores/useTaskStore'
+import { useRoutineStore } from '../../stores/useRoutineStore'
 import { getGreeting } from '../../lib/utils'
 import QuickAdd from './QuickAdd'
 import TodayTaskList from './TodayTaskList'
@@ -29,6 +30,8 @@ export default function Home() {
   const showSchool = profile?.show_school ?? true
   const { classes, assignments, fetchClasses, fetchAssignments } = useSchoolStore()
   const { lists, tasks, fetchLists, fetchTasks } = useTaskStore()
+  const { routineBlocks, fetchRoutineBlocks } = useRoutineStore()
+  const [rightTab, setRightTab] = useState('upcoming')
 
   const rawName = profile?.display_name
     || profile?.full_name?.split(' ')[0]
@@ -40,6 +43,7 @@ export default function Home() {
     if (user) {
       fetchLists(user.id)
       fetchTasks(user.id)
+      fetchRoutineBlocks(user.id)
       if (showSchool) {
         fetchClasses(user.id)
         fetchAssignments(user.id)
@@ -98,6 +102,13 @@ export default function Home() {
       items: upcomingItems.filter(item => isSameDay(item.date, day)),
     })).filter(d => d.items.length > 0)
   }, [upcomingItems])
+
+  const todayBlocks = useMemo(() =>
+    routineBlocks
+      .filter((b) => b.days_of_week?.includes(getDay(new Date())))
+      .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')),
+    [routineBlocks]
+  )
 
   const openCount = activeTasks.length
 
@@ -257,63 +268,117 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right column — Upcoming */}
+        {/* Right column — Upcoming / Today's Routine tabs */}
         <div>
           <div className="section-card">
-            <div className="section-head">
-              <h3>Upcoming</h3>
-              {upcomingItems.length > 0 && (
+            {/* Tab header */}
+            <div className="section-head" style={{ paddingBottom: 0, borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 0 }}>
+                {[
+                  { id: 'upcoming', label: 'Upcoming' },
+                  { id: 'routine', label: 'Today' },
+                ].map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setRightTab(id)}
+                    style={{
+                      fontSize: 12, fontWeight: rightTab === id ? 600 : 500,
+                      color: rightTab === id ? 'var(--fg)' : 'var(--fg-3)',
+                      paddingBottom: 10, paddingRight: 14, paddingTop: 2,
+                      borderBottom: rightTab === id ? '2px solid var(--accent)' : '2px solid transparent',
+                      background: 'none', border: 0,
+                      borderBottomStyle: 'solid',
+                      borderBottomWidth: 2,
+                      borderBottomColor: rightTab === id ? 'var(--accent)' : 'transparent',
+                      cursor: 'pointer', transition: 'color .15s',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {rightTab === 'upcoming' && upcomingItems.length > 0 && (
                 <button
                   className="section-link"
                   onClick={() => navigate('/home/tasks?view=upcoming')}
+                  style={{ marginBottom: 8 }}
                 >
                   See all
                 </button>
               )}
             </div>
 
-            {upcomingDays.length === 0 ? (
-              <p className="muted" style={{ fontSize: 13 }}>Nothing in the next 7 days</p>
-            ) : (
-              <div>
-                {upcomingDays.map(({ day, items }) => (
-                  <div key={day.toISOString()}>
-                    <div style={{
-                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
-                      textTransform: 'uppercase', color: 'var(--fg-3)',
-                      padding: '8px 0 4px',
-                    }}>
-                      {format(day, 'EEE, MMM d')}
-                    </div>
-                    {items.map((item, i) => (
-                      <div key={i} className="upcoming-row">
-                        <div className="upcoming-date">
-                          <div className="upcoming-date-d">{format(item.date, 'd')}</div>
-                          <div className="upcoming-date-m">{format(item.date, 'MMM')}</div>
-                        </div>
-                        <div className="upcoming-content">
-                          <div className="upcoming-title">{item.title}</div>
-                          <div className="upcoming-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {item.color && (
-                              <span style={{ width: 5, height: 5, borderRadius: 999, background: item.color, display: 'inline-block', flexShrink: 0 }} />
-                            )}
-                            {item.sub}
-                            {item.type === 'assignment' && (
-                              <span style={{
-                                fontSize: 9, fontWeight: 600, letterSpacing: '0.04em',
-                                textTransform: 'uppercase', color: 'oklch(0.72 0.14 295)',
-                                marginLeft: 2,
-                              }}>
-                                · class
-                              </span>
-                            )}
+            {rightTab === 'upcoming' ? (
+              upcomingDays.length === 0 ? (
+                <p className="muted" style={{ fontSize: 13 }}>Nothing in the next 7 days</p>
+              ) : (
+                <div>
+                  {upcomingDays.map(({ day, items }) => (
+                    <div key={day.toISOString()}>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                        textTransform: 'uppercase', color: 'var(--fg-3)',
+                        padding: '8px 0 4px',
+                      }}>
+                        {format(day, 'EEE, MMM d')}
+                      </div>
+                      {items.map((item, i) => (
+                        <div key={i} className="upcoming-row">
+                          <div className="upcoming-date">
+                            <div className="upcoming-date-d">{format(item.date, 'd')}</div>
+                            <div className="upcoming-date-m">{format(item.date, 'MMM')}</div>
+                          </div>
+                          <div className="upcoming-content">
+                            <div className="upcoming-title">{item.title}</div>
+                            <div className="upcoming-sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {item.color && (
+                                <span style={{ width: 5, height: 5, borderRadius: 999, background: item.color, display: 'inline-block', flexShrink: 0 }} />
+                              )}
+                              {item.sub}
+                              {item.type === 'assignment' && (
+                                <span style={{
+                                  fontSize: 9, fontWeight: 600, letterSpacing: '0.04em',
+                                  textTransform: 'uppercase', color: 'oklch(0.72 0.14 295)',
+                                  marginLeft: 2,
+                                }}>
+                                  · class
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              todayBlocks.length === 0 ? (
+                <p className="muted" style={{ fontSize: 13 }}>No routine blocks for today</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {todayBlocks.map((block) => (
+                    <div
+                      key={block.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 8,
+                        backgroundColor: block.color + '18',
+                        borderLeft: `3px solid ${block.color}`,
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: block.color, marginBottom: 1 }}>
+                          {block.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+                          {block.start_time?.slice(0, 5)} – {block.end_time?.slice(0, 5)}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
         </div>

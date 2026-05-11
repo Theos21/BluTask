@@ -12,7 +12,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useSchoolStore } from '../../stores/useSchoolStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { TYPE_CATEGORIES, getTypeByValue } from '../../lib/constants'
+import { getTypeByValue } from '../../lib/constants'
 import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 import ClassModal from './ClassModal'
@@ -137,7 +137,6 @@ export default function School() {
   const [editAssignment, setEditAssignment] = useState(null)
   const [defaultClassId, setDefaultClassId] = useState(null)
   const [importModalOpen, setImportModalOpen] = useState(false)
-  const [typeFilter, setTypeFilter] = useState('all')
   const [studyModeOpen, setStudyModeOpen] = useState(false)
   const [studyClass, setStudyClass] = useState(null)
   const [studyAssignment, setStudyAssignment] = useState(null)
@@ -244,11 +243,6 @@ export default function School() {
     ['quiz', 'test'].includes(a.type) && a.status !== 'graded'
   )
 
-  function applyTypeFilter(list) {
-    if (typeFilter === 'all') return list
-    return list.filter((a) => getTypeByValue(a.type)?.category === typeFilter)
-  }
-
   return (
     <div className="page" style={{ maxWidth: 1200 }}>
       <div className="page-head">
@@ -297,13 +291,6 @@ export default function School() {
         <div className="seg">
           {VIEWS.map(({ id, label }) => (
             <button key={id} onClick={() => setView(id)} className={`seg-btn${view === id ? ' on' : ''}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="seg">
-          {TYPE_CATEGORIES.map(({ id, label }) => (
-            <button key={id} onClick={() => setTypeFilter(id)} className={`seg-btn${typeFilter === id ? ' on' : ''}`}>
               {label}
             </button>
           ))}
@@ -408,7 +395,7 @@ export default function School() {
 
                 <div className="space-y-4">
                   {sortedClasses.map((cls) => {
-                    const clsAssignments = applyTypeFilter(sortedAssignments.filter((a) => a.class_id === cls.id))
+                    const clsAssignments = sortedAssignments.filter((a) => a.class_id === cls.id)
                     if (clsAssignments.length === 0) return null
                     return (
                       <div key={cls.id} className="card overflow-hidden">
@@ -446,13 +433,13 @@ export default function School() {
 
             {view === 'bydate' && (
               <div className="card overflow-hidden">
-                {applyTypeFilter(sortedAssignments).length === 0 ? (
+                {sortedAssignments.length === 0 ? (
                   <div className="px-4 py-12 text-center">
                     <p className="text-sm text-gray-400">No assignments yet</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                    {applyTypeFilter(sortedAssignments).map((a) => {
+                    {sortedAssignments.map((a) => {
                       const cls = classes.find((c) => c.id === a.class_id)
                       return (
                         <AssignmentRow key={a.id} assignment={a} classData={cls} onEdit={openEditAssignment} />
@@ -465,7 +452,7 @@ export default function School() {
 
             {view === 'assessments' && (
               <div className="card overflow-hidden">
-                {applyTypeFilter(assessmentAssignments).length === 0 ? (
+                {assessmentAssignments.length === 0 ? (
                   <EmptyState
                     icon={FlaskConical}
                     title="No upcoming assessments"
@@ -473,7 +460,7 @@ export default function School() {
                   />
                 ) : (
                   <div className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                    {applyTypeFilter(assessmentAssignments).map((a) => {
+                    {assessmentAssignments.map((a) => {
                       const cls = classes.find((c) => c.id === a.class_id)
                       return (
                         <AssignmentRow key={a.id} assignment={a} classData={cls} onEdit={openEditAssignment} />

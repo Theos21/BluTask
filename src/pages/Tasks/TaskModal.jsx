@@ -20,7 +20,7 @@ export default function TaskModal({
 }) {
   const { user } = useAuthStore()
   const { lists, addTask, updateTask, addChecklistItem, toggleChecklistItem, deleteChecklistItem, checklistItems, fetchChecklistItems } = useTaskStore()
-  const { tags, taskTags, addTag, addTagToTask, removeTagFromTask } = useTagStore()
+  const { tags, taskTags, addTag, addTagToTask, removeTagFromTask, deleteTag } = useTagStore()
 
   const INBOX = { id: 'inbox', name: 'Inbox', color: '#6b7280' }
   const allLists = [INBOX, ...lists]
@@ -285,20 +285,32 @@ export default function TaskModal({
               {tags.map((tag) => {
                 const selected = selectedTagIds.includes(tag.id)
                 return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag.id)}
-                    className={`text-[11px] px-2.5 py-1 rounded-full font-medium border transition-all ${
-                      selected
-                        ? 'border-transparent'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                    style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
-                  >
-                    {selected && <span className="mr-1">✓</span>}
-                    {tag.name}
-                  </button>
+                  <div key={tag.id} className="group relative inline-flex">
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className={`text-[11px] px-2.5 py-1 rounded-full font-medium border transition-all pr-5 ${
+                        selected
+                          ? 'border-transparent'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
+                    >
+                      {selected && <span className="mr-1">✓</span>}
+                      {tag.name}
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete tag"
+                      onClick={() => {
+                        deleteTag(tag.id)
+                        setSelectedTagIds((prev) => prev.filter((id) => id !== tag.id))
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-rose-500 transition-all"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
                 )
               })}
             </div>

@@ -397,34 +397,56 @@ export default function Calendar() {
                         {format(day, 'd')}
                       </span>
                       {total > 0 && (
-                        <div className="mt-1 space-y-0.5">
-                          {dayA.slice(0, 2).map((a) => {
-                            const cls = classes.find((c) => c.id === a.class_id)
-                            return (
+                        <>
+                          {/* Mobile: colored dots only */}
+                          <div className="sm:hidden flex flex-wrap gap-0.5 mt-1">
+                            {dayA.slice(0, 3).map((a) => {
+                              const cls = classes.find((c) => c.id === a.class_id)
+                              return (
+                                <span
+                                  key={a.id}
+                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: cls ? cls.color : '#6366f1' }}
+                                />
+                              )
+                            })}
+                            {dayT.slice(0, Math.max(0, 3 - dayA.slice(0,3).length)).map((t) => (
+                              <span key={t.id} className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-shrink-0" />
+                            ))}
+                            {total > 3 && (
+                              <span className="text-[9px] text-gray-400 leading-none self-center">+{total - 3}</span>
+                            )}
+                          </div>
+                          {/* Desktop: text labels */}
+                          <div className="hidden sm:block mt-1 space-y-0.5">
+                            {dayA.slice(0, 2).map((a) => {
+                              const cls = classes.find((c) => c.id === a.class_id)
+                              return (
+                                <div
+                                  key={a.id}
+                                  className="text-[10px] truncate rounded px-1 py-0.5 font-medium"
+                                  style={{
+                                    backgroundColor: cls ? cls.color + '25' : '#6366f125',
+                                    color: cls ? cls.color : '#6366f1',
+                                  }}
+                                >
+                                  {a.title}
+                                </div>
+                              )
+                            })}
+                            {dayT.slice(0, total > 2 ? 1 : 2).map((t) => (
                               <div
-                                key={a.id}
-                                className="text-[10px] truncate rounded px-1 py-0.5 font-medium"
-                                style={{
-                                  backgroundColor: cls ? cls.color + '25' : '#6366f125',
-                                  color: cls ? cls.color : '#6366f1',
-                                }}
+                                key={t.id}
+                                className="text-[10px] truncate rounded px-1 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-medium"
                               >
-                                {a.title}
+                                {t.title}
                               </div>
-                            )
-                          })}
-                          {dayT.slice(0, total > 2 ? 1 : 2).map((t) => (
-                            <div
-                              key={t.id}
-                              className="text-[10px] truncate rounded px-1 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-medium"
-                            >
-                              {t.title}
-                            </div>
-                          ))}
-                          {total > 2 && (
-                            <div className="text-[10px] text-gray-400 px-1">+{total - 2} more</div>
-                          )}
-                        </div>
+                            ))}
+                            {total > 2 && (
+                              <div className="text-[10px] text-gray-400 px-1">+{total - 2} more</div>
+                            )}
+                          </div>
+                        </>
                       )}
                     </button>
                   )

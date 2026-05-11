@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+export default function Modal({ isOpen, onClose, title, children, size = 'md', footer }) {
   const mouseDownOnOverlay = useRef(false)
 
   useEffect(() => {
@@ -26,13 +26,13 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       onMouseDown={(e) => { mouseDownOnOverlay.current = e.target === e.currentTarget }}
       onClick={(e) => { if (e.target === e.currentTarget && mouseDownOnOverlay.current) onClose() }}
     >
-      <div className={`modal-content ${sizes[size]} max-h-[90vh] overflow-y-auto`}>
+      <div className={`modal-content ${sizes[size]} flex flex-col`} style={{ maxHeight: '90vh' }}>
         {/* Drag handle — only visible on mobile bottom sheet */}
-        <div className="md:hidden flex justify-center pt-3 -mb-1">
+        <div className="md:hidden flex justify-center pt-3 -mb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
         </div>
         {title && (
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
             <button
               onClick={onClose}
@@ -42,7 +42,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        {footer && (
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 bg-inherit">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body

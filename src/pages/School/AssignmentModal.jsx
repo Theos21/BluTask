@@ -79,9 +79,8 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
   const [pickerAmPm, setPickerAmPm] = useState('PM')
   const [endOfPeriod, setEndOfPeriod] = useState(false)
 
-  const isAssessmentType = type === 'quiz' || type === 'test'
   const isClassworkType = type === 'classwork'
-  const showTimePicker = !isAssessmentType && !(isClassworkType && endOfPeriod)
+  const showTimePicker = !(isClassworkType && endOfPeriod)
 
   // Reset every field when the modal opens or the target assignment changes
   useEffect(() => {
@@ -127,10 +126,6 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
   function buildDueDate() {
     if (!calDate) return null
     const d = new Date(calDate)
-    if (isAssessmentType) {
-      d.setHours(12, 0, 0, 0)
-      return d.toISOString()
-    }
     if (isClassworkType && endOfPeriod) {
       d.setHours(0, 0, 0, 0) // midnight sentinel = end of period
       return d.toISOString()
@@ -143,9 +138,7 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
   }
 
   const displayDateValue = calDate
-    ? isAssessmentType
-      ? format(calDate, 'MMM d, yyyy')
-      : isClassworkType && endOfPeriod
+    ? isClassworkType && endOfPeriod
         ? `${format(calDate, 'MMM d, yyyy')} · End of period`
         : `${format(calDate, 'MMM d, yyyy')} · ${pickerHour}:${pickerMinute} ${pickerAmPm}`
     : null
@@ -239,7 +232,7 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
         {/* Date / time picker */}
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            {isAssessmentType ? 'Date' : 'Due date & time'}
+            Due date & time
           </label>
           <RadixPopover.Root open={pickerOpen} onOpenChange={setPickerOpen}>
             <RadixPopover.Trigger asChild>
@@ -249,7 +242,7 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
               >
                 <CalendarIcon size={14} className="text-gray-400 flex-shrink-0" />
                 <span className={displayDateValue ? 'text-gray-900 dark:text-gray-100 flex-1' : 'text-gray-400 dark:text-gray-600 flex-1'}>
-                  {displayDateValue || (isAssessmentType ? 'Pick a date' : 'Pick a date & time')}
+                  {displayDateValue || 'Pick a date & time'}
                 </span>
                 {displayDateValue && (
                   <span
@@ -274,11 +267,7 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
                 <Calendar
                   mode="single"
                   selected={calDate}
-                  onSelect={(d) => {
-                    setCalDate(d)
-                    // Assessment types close automatically - no time to pick
-                    if (d && isAssessmentType) setPickerOpen(false)
-                  }}
+                  onSelect={(d) => setCalDate(d)}
                   initialFocus
                 />
                 {/* Classwork: "Due at end of period" checkbox + optional time */}
@@ -314,8 +303,8 @@ export default function AssignmentModal({ isOpen, onClose, editAssignment = null
                     )}
                   </div>
                 )}
-                {/* All other types: full time picker, defaults to 11:59 PM */}
-                {!isAssessmentType && !isClassworkType && (
+                {/* Time picker for all non-classwork types */}
+                {!isClassworkType && (
                   <div className="flex items-center gap-2 pt-3 mt-1 border-t border-gray-100 dark:border-gray-800">
                     <select value={pickerHour} onChange={(e) => setPickerHour(e.target.value)} className={timeSelectClass}>
                       {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}

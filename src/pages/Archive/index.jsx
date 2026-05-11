@@ -73,7 +73,7 @@ function ArchiveRow({ item, onUndo }) {
         className="task-due done-time"
         style={{ color: 'var(--fg-4)', background: 'transparent', border: 'none', fontSize: 11 }}
       >
-        {format(new Date(item.completed_at || item.updated_at), 'MMM d')}
+        {format(new Date(item.completed_at || item.updated_at), 'MMM d, h:mma')}
       </div>
       <button
         onClick={() => onUndo(item)}

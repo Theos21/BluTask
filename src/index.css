@@ -873,9 +873,12 @@ input, textarea, button { font-family: inherit; color: inherit; }
   .class-grid { grid-template-columns: 1fr; }
   .watch-grid { grid-template-columns: repeat(2, 1fr); }
   .home-stats { grid-template-columns: repeat(2, 1fr); }
-  .page-head-right { flex-direction: column; align-items: stretch; }
-  .page-head-right .btn-primary,
-  .page-head-right .btn-ghost { justify-content: center; }
+  /* Scrollable horizontal row — prevents stacking/overlapping on narrow screens */
+  .page-head-right {
+    overflow-x: auto; flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+  }
+  .page-head-right::-webkit-scrollbar { display: none; }
 }
 
 /* ============================================================

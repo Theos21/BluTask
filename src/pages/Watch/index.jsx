@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { useWatchStore } from '../../stores/useWatchStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { showToast } from '../../lib/toast'
+import { isCapacitor } from '../../hooks/useMobileApp'
 import AddShowModal from './AddShowModal'
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
@@ -389,7 +390,8 @@ export default function Watch() {
       token = crypto.randomUUID()
       await updateProfile({ share_token: token })
     }
-    const url = `${window.location.origin}/shared/watch/${token}`
+    const shareOrigin = isCapacitor ? 'https://blutask.app' : window.location.origin
+    const url = `${shareOrigin}/shared/watch/${token}`
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
