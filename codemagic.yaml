@@ -153,33 +153,39 @@ workflows:
 
       - name: Build IPA
         script: |
-          set -o pipefail
-          mkdir -p /tmp/xcodebuild_logs
+          set -eo pipefail
+          mkdir -p /tmp/xcodebuild_logs build/ios/ipa
 
           echo "=== Certificates in keychain ==="
           security find-identity -v -p codesigning
 
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
-            BUILD_FLAG="--workspace $WORKSPACE"
+            BUILD_FLAG="-workspace $WORKSPACE"
+            echo "Using workspace: $WORKSPACE"
           else
-            BUILD_FLAG="--project $XCODE_PROJECT"
+            BUILD_FLAG="-project $XCODE_PROJECT"
+            echo "Using project: $XCODE_PROJECT"
           fi
 
-          xcode-project build-ipa \
+          echo "=== Archiving ==="
+          xcodebuild archive \
             $BUILD_FLAG \
-            --scheme "$XCODE_SCHEME" \
-            2>&1 | tee /tmp/xcodebuild_logs/build.log
-          BUILD_STATUS=${PIPESTATUS[0]}
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -archivePath /tmp/BluTask.xcarchive \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_STYLE=Manual \
+            2>&1 | tee /tmp/xcodebuild_logs/archive.log
 
-          if [ "$BUILD_STATUS" -ne 0 ]; then
-            echo ""
-            echo "=== BUILD FAILED (exit $BUILD_STATUS) — last 150 lines ==="
-            tail -150 /tmp/xcodebuild_logs/build.log
-            exit "$BUILD_STATUS"
-          fi
+          echo "=== Exporting IPA ==="
+          xcodebuild -exportArchive \
+            -archivePath /tmp/BluTask.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath build/ios/ipa \
+            2>&1 | tee /tmp/xcodebuild_logs/export.log
 
-          echo "=== IPA output ==="
+          echo "=== IPA files ==="
           find build/ios/ipa -type f
 
       - name: Upload to TestFlight
