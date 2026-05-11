@@ -163,12 +163,11 @@ workflows:
 
       - name: Set build number
         script: |
-          # Use total git commit count as the build number — always higher than the
-          # previous build as long as at least one commit is added between uploads.
           BUILD_NUMBER=51
-        echo "Build number: $BUILD_NUMBER"
-        cd ios/App
-        xcrun agvtool new-version -all "$BUILD_NUMBER"
+          echo "Build number: $BUILD_NUMBER"
+          cd ios/App
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+
 
 
       - name: Build IPA
