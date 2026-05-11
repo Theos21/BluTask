@@ -230,10 +230,17 @@ export default function App() {
         console.log('[OAuth] PKCE — raw code   :', rawCode)
         console.log('[OAuth] PKCE — clean code :', code)
         console.log('[OAuth] PKCE — lengths (raw/clean):', rawCode.length, '/', code.length)
+        console.log('[OAuth] PKCE — exchange starting at:', new Date().toISOString())
 
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+        console.log('[OAuth] PKCE — exchange finished at:', new Date().toISOString())
         if (error) {
-          console.log('[OAuth] exchangeCodeForSession failed:', error.message)
+          console.log('[OAuth] exchangeCodeForSession FAILED')
+          console.log('[OAuth]   message :', error.message)
+          console.log('[OAuth]   status  :', error.status)
+          console.log('[OAuth]   code    :', error.code)
+          console.log('[OAuth]   details :', JSON.stringify(error))
           dispatchOAuthError(error.message)
         } else {
           console.log('[OAuth] Signed in (PKCE):', data?.user?.email)
