@@ -153,6 +153,25 @@ workflows:
 
       - name: Build IPA
         script: |
+          cat > /tmp/ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>uploadBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
             BUILD_TARGET="--workspace $WORKSPACE"
@@ -163,7 +182,7 @@ workflows:
           xcode-project build-ipa \
             $BUILD_TARGET \
             --scheme "$XCODE_SCHEME" \
-            --custom-export-options '{"method":"app-store","signingStyle":"manual"}'
+            --export-options-path /tmp/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
