@@ -153,7 +153,9 @@ workflows:
 
       - name: Build IPA
         script: |
-          cat > /tmp/ExportOptions.plist << 'EOF'
+          mkdir -p /tmp/xcodebuild_logs build/ios/ipa
+
+          cat > /tmp/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -170,19 +172,31 @@ workflows:
             <false/>
           </dict>
           </plist>
-          EOF
+          PLIST
 
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
-            BUILD_TARGET="--workspace $WORKSPACE"
+            BUILD_FLAG="-workspace $WORKSPACE"
           else
-            BUILD_TARGET="--project $XCODE_PROJECT"
+            BUILD_FLAG="-project $XCODE_PROJECT"
           fi
 
-          xcode-project build-ipa \
-            $BUILD_TARGET \
-            --scheme "$XCODE_SCHEME" \
-            --export-options-path /tmp/ExportOptions.plist
+          # Step 1 — archive
+          xcodebuild archive \
+            $BUILD_FLAG \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -archivePath /tmp/BluTask.xcarchive \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_STYLE=Manual \
+            2>&1 | tee /tmp/xcodebuild_logs/archive.log
+
+          # Step 2 — export IPA
+          xcodebuild -exportArchive \
+            -archivePath /tmp/BluTask.xcarchive \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -exportPath build/ios/ipa \
+            2>&1 | tee /tmp/xcodebuild_logs/export.log
 
     artifacts:
       - build/ios/ipa/*.ipa
