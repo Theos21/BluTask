@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=430"/>
+<title>BluTask App Store Screenshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #1a1f2e;
+  --bg-2:   #242938;
+  --bg-3:   #2d3446;
+  --bg-4:   #363d52;
+  --fg:     #e2e8f0;
+  --fg-2:   #94a3b8;
+  --fg-3:   #64748b;
+  --fg-4:   #475569;
+  --border: rgba(148,163,184,.10);
+  --hair:   rgba(255,255,255,.05);
+  --blue:   #3b82f6;
+  --blue-2: #60a5fa;
+  --green:  #4cc28d;
+  --violet: #a78bfa;
+  --amber:  #f5b35b;
+  --pink:   #f472b6;
+  --red:    #f87171;
+}
+html { background: #000; }
+
+/* ── one screenshot = 430 × 932 px (× 3 DPR = 1290 × 2796) ── */
+.screen {
+  width: 430px;
+  height: 932px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--fg);
+  page-break-after: always;
+}
+
+/* ── gradient backgrounds per screen ── */
+.screen-1 { background: radial-gradient(700px at 60% -10%, rgba(59,130,246,.35), transparent 55%), linear-gradient(180deg, #161c2d 0%, #0c1018 100%); }
+.screen-2 { background: radial-gradient(600px at 30% 0%,  rgba(76,194,141,.25),  transparent 50%), linear-gradient(180deg, #121a1e 0%, #0a0f14 100%); }
+.screen-3 { background: radial-gradient(700px at 70% -5%, rgba(167,139,250,.28), transparent 55%), linear-gradient(180deg, #16172b 0%, #0c0c18 100%); }
+.screen-4 { background: radial-gradient(600px at 50% -5%, rgba(245,179,91,.22),   transparent 50%), linear-gradient(180deg, #1a1610 0%, #0f0c08 100%); }
+.screen-5 { background: radial-gradient(700px at 50% -5%, rgba(59,130,246,.30),  transparent 55%), linear-gradient(180deg, #141a28 0%, #0a0f1a 100%); }
+
+/* ── top text cap ── */
+.cap {
+  padding: 52px 36px 28px;
+  text-align: center;
+}
+.cap-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--blue-2); margin-bottom: 18px;
+}
+.cap-eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.cap h2 {
+  font-size: 32px; font-weight: 800; letter-spacing: -.025em; line-height: 1.10;
+  margin-bottom: 10px;
+}
+.cap h2 .a1 { color: var(--blue-2); }
+.cap h2 .a2 { color: var(--green); }
+.cap h2 .a3 { color: var(--violet); }
+.cap h2 .a4 { color: var(--amber); }
+.cap h2 .a5 { color: #7dd3fc; }
+.cap p { font-size: 14px; color: var(--fg-2); line-height: 1.55; max-width: 320px; margin: 0 auto; }
+
+/* ── phone shell ── */
+.phone-wrap {
+  display: flex; justify-content: center;
+  padding: 0 24px;
+  flex: 1;
+}
+.phone {
+  width: 310px;
+  flex-shrink: 0;
+  background: #0b1018;
+  border-radius: 48px;
+  border: 8px solid #2a3448;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.04),
+    0 36px 80px rgba(0,0,0,.7),
+    0 12px 32px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  overflow: hidden;
+  position: relative;
+}
+/* dynamic island */
+.phone::before {
+  content: '';
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 30px;
+  background: #000; border-radius: 20px;
+  z-index: 10;
+}
+
+/* ── phone content ── */
+.app {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  font-size: 11px;
+}
+
+/* status bar */
+.sb {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 4px;
+  font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  color: var(--fg); flex-shrink: 0;
+  min-height: 52px;
+}
+.sb-time { font-size: 13px; font-weight: 700; }
+.sb-icons { display: flex; align-items: center; gap: 5px; }
+.sb-icons svg { width: 14px; height: 14px; fill: var(--fg); }
+
+/* page content */
+.pg { flex: 1; overflow: hidden; padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 0; }
+.pg-h { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 2px; }
+.pg-sub { font-size: 11px; color: var(--fg-2); margin-bottom: 10px; }
+
+/* section heading */
+.sh {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 9px; text-transform: uppercase; letter-spacing: .10em; font-weight: 700;
+  color: var(--fg-3); margin: 10px 0 6px;
+}
+.sh .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sh .rule { flex: 1; height: 1px; background: var(--border); }
+.sh .ct {
+  font-family: 'JetBrains Mono', monospace; font-size: 8px;
+  background: var(--bg-3); border-radius: 999px; padding: 1px 6px; color: var(--fg-3);
+}
+
+/* card list */
+.card-list {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden; margin-bottom: 6px;
+}
+.row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px; border-bottom: 1px solid var(--hair);
+  font-size: 11.5px;
+}
+.row:last-child { border-bottom: 0; }
+.cb {
+  width: 15px; height: 15px; border-radius: 4px;
+  border: 1.5px solid var(--fg-4); flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.cb.on { background: var(--green); border-color: var(--green); }
+.cb.on::after {
+  content: ''; width: 8px; height: 4px;
+  border-left: 2px solid #0b1220; border-bottom: 2px solid #0b1220;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.row-t { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row.done .row-t { color: var(--fg-3); text-decoration: line-through; }
+.chip {
+  font-family: 'JetBrains Mono', monospace; font-size: 8px;
+  padding: 1px 6px; border-radius: 999px; border: 1px solid; flex-shrink: 0;
+}
+.chip-blue  { color: #a8c9ff; border-color: rgba(110,168,255,.4); background: rgba(110,168,255,.10); }
+.chip-vio   { color: #c8b3ff; border-color: rgba(167,139,250,.4); background: rgba(167,139,250,.10); }
+.chip-amb   { color: #f5cf99; border-color: rgba(245,179,91,.4);  background: rgba(245,179,91,.10); }
+.chip-grn   { color: #98e3bf; border-color: rgba(76,194,141,.4);  background: rgba(76,194,141,.10); }
+.chip-pink  { color: #f9b8d0; border-color: rgba(244,114,182,.4); background: rgba(244,114,182,.10); }
+.due {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+  background: rgba(255,255,255,.03); border: 1px solid var(--hair); color: var(--fg-2);
+}
+.due.hot { color: var(--amber); border-color: rgba(245,179,91,.3); background: rgba(245,179,91,.06); }
+.due.red { color: var(--red);   border-color: rgba(248,113,113,.3); background: rgba(248,113,113,.06); }
+
+/* tab bar */
+.tab-bar {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--bg); border-top: 1px solid var(--border);
+  padding: 8px 0 20px; flex-shrink: 0;
+}
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tab svg { width: 22px; height: 22px; stroke: var(--fg-3); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tab.on svg { stroke: var(--blue-2); }
+.tab-lbl { font-size: 9px; color: var(--fg-3); font-weight: 500; }
+.tab.on .tab-lbl { color: var(--blue-2); }
+
+/* stat cards row */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.stat {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 12px;
+}
+.stat .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--fg-3); }
+.stat .val { font-size: 22px; font-weight: 700; letter-spacing: -.025em; margin-top: 4px; }
+.stat .val small { font-size: 11px; color: var(--fg-3); }
+
+/* spaces strip */
+.spaces { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.space {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 9px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.space .sp-dot { width: 6px; height: 6px; border-radius: 50%; }
+.space .sp-nm { font-size: 11px; font-weight: 600; }
+.space .sp-ct { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: var(--fg-3); }
+
+/* calendar grid */
+.cal-head { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 3px; }
+.cal-head span { font-size: 9px; color: var(--fg-3); text-align: center; font-family: 'JetBrains Mono', monospace; }
+.cal { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 8px; }
+.cd {
+  background: var(--bg-2); border-radius: 5px; padding: 5px 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--fg-3);
+  min-height: 34px; display: flex; flex-direction: column; gap: 2px;
+}
+.cd.td { background: rgba(59,130,246,.18); color: var(--blue-2); font-weight: 700; }
+.cd .ev { height: 3px; border-radius: 1px; }
+
+/* progress bar */
+.prog-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.prog-item {
+  background: var(--bg-2); border-left: 3px solid; border-radius: 7px;
+  padding: 7px 10px;
+}
+.prog-code { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--fg-3); }
+.prog-name { font-size: 11px; font-weight: 600; }
+.prog-bar { margin-top: 5px; height: 3px; background: var(--bg-4); border-radius: 999px; }
+.prog-fill { height: 100%; border-radius: 999px; }
+
+/* assignment rows */
+.asg {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; margin-bottom: 5px;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.asg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.asg-body { flex: 1; }
+.asg-title { font-size: 11px; font-weight: 600; }
+.asg-meta { font-size: 9px; color: var(--fg-3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+/* quick-add pill */
+.qa-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-2); border: 1.5px solid rgba(59,130,246,.4);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+}
+.qa-icon { width: 20px; height: 20px; border-radius: 6px; background: var(--blue); display: grid; place-items: center; flex-shrink: 0; }
+.qa-icon svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.qa-text { font-size: 11.5px; color: var(--fg-2); }
+.qa-text strong { color: var(--fg); }
+
+/* AI import box */
+.ai-box {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+}
+.ai-box-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ai-box-head .spark {
+  width: 20px; height: 20px; border-radius: 6px;
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  display: grid; place-items: center;
+}
+.ai-box-head .spark svg { width: 12px; height: 12px; fill: #fff; }
+.ai-box-head span { font-size: 11px; font-weight: 600; }
+.ai-list { display: flex; flex-direction: column; gap: 4px; }
+.ai-item { display: flex; align-items: center; gap: 7px; font-size: 10.5px; }
+.ai-item .cb-sm { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid var(--fg-4); flex-shrink: 0; }
+.ai-item.checked .cb-sm { background: var(--blue); border-color: var(--blue); }
+
+/* notif items */
+.notif-card {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 5px;
+  display: flex; gap: 10px; align-items: center;
+}
+.notif-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
+.notif-icon svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.notif-body { flex: 1; }
+.notif-title { font-size: 11px; font-weight: 600; }
+.notif-desc  { font-size: 10px; color: var(--fg-2); margin-top: 1px; }
+.notif-time  { font-size: 9px; color: var(--fg-3); font-family: 'JetBrains Mono', monospace; }
+
+/* toggle */
+.tog-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg-2); border-radius: 9px; margin-bottom: 4px; }
+.tog-lbl { font-size: 11px; font-weight: 500; }
+.tog-sub  { font-size: 9.5px; color: var(--fg-2); }
+.tog { width: 36px; height: 20px; border-radius: 10px; background: var(--blue); position: relative; flex-shrink: 0; }
+.tog::after { content: ''; position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; background: #fff; border-radius: 50%; }
+.tog.off { background: var(--bg-4); }
+.tog.off::after { left: 3px; right: auto; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 1 — HOME DASHBOARD
+═══════════════════════════════════════════════ -->
+<div class="screen screen-1" id="s1">
+  <div class="cap">
+    <div class="cap-eyebrow"><span class="dot"></span>Your productivity hub<span class="dot"></span></div>
+    <h2>Plan your day in<br><span class="a1">one calm place.</span></h2>
+    <p>Tasks, school, and calendar — brought together in a single focused workspace.</p>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone" style="height:620px;">
+      <div class="app">
+        <div class="sb">
+          <span class="sb-time">9:41</span>
+          <div class="sb-icons">
+            <svg viewBox="0 0 24 24"><path d="M1 6l5 5 5-5"/><path d="M6 18V11"/><path d="M13 6l5 5 5-5"/><path d="M18 18V11"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2"/><path d="M22 11v2"/></svg>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="pg-h">Good morning, Alex 👋</div>
+          <div class="pg-sub">Sunday, May 11 · 3 items need attention</div>
+          <div class="stats">
+            <div class="stat"><div class="lbl">Open today</div><div class="val" style="color:var(--blue-2)">8</div></div>
+            <div class="stat"><div class="lbl">Streak</div><div class="val">14<small>d 🔥</small></div></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:var(--fg-3)"></span>Spaces<span class="ct">4</span><span class="rule"></span></div>
+          <div class="spaces">
+            <div class="space"><span class="sp-dot" style="background:var(--blue)"></span><span class="sp-nm">Tasks</span><span class="sp-ct">12 open</span></div>
+            <div class="space"><span class="sp-dot" style="background:var(--violet)"></span><span class="sp-nm">School</span><span class="sp-ct">7 open</span></div>
+            <div class="space"><span class="sp-dot" style="background:var(--amber)"></span><span class="sp-nm">Work</span><span class="sp-ct">5 open</span></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:#f47358"></span>Up next<span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row"><div class="cb"></div><span class="row-t">Q3 retrospective draft</span><span class="due hot">10am</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Algorithms · pset 6</span><span class="due hot">2pm</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Team standup</span><span class="due">4pm</span></div>
+            <div class="row done"><div class="cb on"></div><span class="row-t">Morning run</span><span class="due">7am</span></div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab on"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-lbl">Home</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M22 10v6M2 10l10-7 10 7"/><path d="M6 10v8h12v-8"/></svg><span class="tab-lbl">School</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="tab-lbl">Tasks</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span class="tab-lbl">Calendar</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg><span class="tab-lbl">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 2 — TASKS
+═══════════════════════════════════════════════ -->
+<div class="screen screen-2" id="s2">
+  <div class="cap">
+    <div class="cap-eyebrow" style="color:var(--green)"><span class="dot"></span>Task management<span class="dot"></span></div>
+    <h2>Capture everything.<br><span class="a2">Nothing slips.</span></h2>
+    <p>Lists, tags, and priorities — with natural-language due dates that actually understand you.</p>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone" style="height:630px;">
+      <div class="app">
+        <div class="sb">
+          <span class="sb-time">9:41</span>
+          <div class="sb-icons">
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M1 6l5 5 5-5"/><path d="M6 18V11"/><path d="M13 6l5 5 5-5"/><path d="M18 18V11"/></svg>
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2" fill="var(--fg)"/><path d="M22 11v2" stroke="var(--fg)" fill="none"/></svg>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="pg-h">Tasks</div>
+          <div class="pg-sub">12 open · 3 due today · 4 done today</div>
+          <!-- quick-add -->
+          <div class="qa-pill">
+            <div class="qa-icon"><svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            <span class="qa-text"><strong>Add a task…</strong> &nbsp;try "Call dentist tmrw 3pm"</span>
+          </div>
+          <div class="sh"><span class="dot" style="background:#f47358"></span>Today<span class="ct">3</span><span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row"><div class="cb"></div><span class="row-t">Q3 retrospective draft</span><span class="chip chip-blue">deep work</span><span class="due hot">Today</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Review PR #482</span><span class="chip chip-vio">review</span><span class="due hot">Today</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Reply to Sasha re: contract</span><span class="chip chip-amb">admin</span><span class="due hot">Today</span></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:var(--blue-2)"></span>This week<span class="ct">5</span><span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row"><div class="cb"></div><span class="row-t">Wireframe new onboarding</span><span class="chip chip-blue">design</span><span class="due">Thu</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Intro call with Mira</span><span class="chip chip-amb">admin</span><span class="due">Fri</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Pay credit card bill</span><span class="chip chip-grn">quick</span><span class="due">Sat</span></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:var(--fg-3)"></span>Completed<span class="ct">4</span><span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row done"><div class="cb on"></div><span class="row-t">Push tokens v2 to Figma</span><span class="due">2h ago</span></div>
+            <div class="row done"><div class="cb on"></div><span class="row-t">Send invoice to Northwind</span><span class="due">Yest</span></div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-lbl">Home</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M22 10v6M2 10l10-7 10 7"/><path d="M6 10v8h12v-8"/></svg><span class="tab-lbl">School</span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="tab-lbl">Tasks</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span class="tab-lbl">Calendar</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg><span class="tab-lbl">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 3 — SCHOOL / ASSIGNMENTS
+═══════════════════════════════════════════════ -->
+<div class="screen screen-3" id="s3">
+  <div class="cap">
+    <div class="cap-eyebrow" style="color:var(--violet)"><span class="dot"></span>School tracker<span class="dot"></span></div>
+    <h2>Class deadlines,<br><span class="a3">never missed.</span></h2>
+    <p>Color-coded classes with a built-in calendar. Assignments tracked from syllabus to submitted.</p>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone" style="height:628px;">
+      <div class="app">
+        <div class="sb">
+          <span class="sb-time">9:41</span>
+          <div class="sb-icons">
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M1 6l5 5 5-5M6 18V11M13 6l5 5 5-5M18 18V11"/></svg>
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2" fill="var(--fg)"/><path d="M22 11v2" stroke="var(--fg)" fill="none"/></svg>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="pg-h">School</div>
+          <div class="pg-sub">Spring semester · 4 classes · 7 pending</div>
+          <div class="cal-head" style="margin-top:4px"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+          <div class="cal">
+            <div class="cd">5</div>
+            <div class="cd">6<div class="ev" style="background:var(--violet)"></div></div>
+            <div class="cd">7</div>
+            <div class="cd">8<div class="ev" style="background:var(--amber)"></div></div>
+            <div class="cd">9<div class="ev" style="background:var(--violet)"></div></div>
+            <div class="cd">10</div>
+            <div class="cd">11</div>
+            <div class="cd td">12<div class="ev" style="background:var(--blue)"></div><div class="ev" style="background:var(--violet)"></div></div>
+            <div class="cd">13</div>
+            <div class="cd">14<div class="ev" style="background:var(--amber)"></div></div>
+            <div class="cd">15<div class="ev" style="background:var(--violet)"></div><div class="ev" style="background:var(--blue)"></div></div>
+            <div class="cd">16</div>
+            <div class="cd">17</div>
+            <div class="cd">18</div>
+          </div>
+          <div class="sh"><span class="dot" style="background:var(--fg-3)"></span>Classes<span class="ct">4</span><span class="rule"></span></div>
+          <div class="prog-row">
+            <div class="prog-item" style="border-color:var(--blue)">
+              <div class="prog-code">CS 471</div>
+              <div class="prog-name">Distributed Systems</div>
+              <div class="prog-bar"><div class="prog-fill" style="width:64%;background:var(--blue)"></div></div>
+            </div>
+            <div class="prog-item" style="border-color:var(--violet)">
+              <div class="prog-code">CS 320</div>
+              <div class="prog-name">Algorithms</div>
+              <div class="prog-bar"><div class="prog-fill" style="width:58%;background:var(--violet)"></div></div>
+            </div>
+            <div class="prog-item" style="border-color:var(--amber)">
+              <div class="prog-code">MATH 301</div>
+              <div class="prog-name">Linear Algebra</div>
+              <div class="prog-bar"><div class="prog-fill" style="width:72%;background:var(--amber)"></div></div>
+            </div>
+          </div>
+          <div class="sh"><span class="dot" style="background:#f47358"></span>Due soon<span class="ct">2</span><span class="rule"></span></div>
+          <div class="asg" style="border-left:3px solid var(--violet)">
+            <div class="asg-dot" style="background:var(--violet)"></div>
+            <div class="asg-body">
+              <div class="asg-title">Algorithms · Problem Set 6</div>
+              <div class="asg-meta">CS 320 · Due Tomorrow · 11:59 PM</div>
+            </div>
+            <span class="chip chip-vio">pset</span>
+          </div>
+          <div class="asg" style="border-left:3px solid var(--blue)">
+            <div class="asg-dot" style="background:var(--blue)"></div>
+            <div class="asg-body">
+              <div class="asg-title">Lab 4 — Network Simulation</div>
+              <div class="asg-meta">CS 471 · Due Thu, May 15</div>
+            </div>
+            <span class="chip chip-blue">lab</span>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-lbl">Home</span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" stroke-width="2.5"><path d="M22 10v6M2 10l10-7 10 7"/><path d="M6 10v8h12v-8"/></svg><span class="tab-lbl">School</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="tab-lbl">Tasks</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span class="tab-lbl">Calendar</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg><span class="tab-lbl">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 4 — CALENDAR WEEK VIEW
+═══════════════════════════════════════════════ -->
+<div class="screen screen-4" id="s4">
+  <div class="cap">
+    <div class="cap-eyebrow" style="color:var(--amber)"><span class="dot"></span>Week at a glance<span class="dot"></span></div>
+    <h2>See the whole week.<br><span class="a4">Stay in flow.</span></h2>
+    <p>Tasks and school deadlines shown side-by-side with your calendar. Block time that actually sticks.</p>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone" style="height:625px;">
+      <div class="app">
+        <div class="sb">
+          <span class="sb-time">9:41</span>
+          <div class="sb-icons">
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M1 6l5 5 5-5M6 18V11M13 6l5 5 5-5M18 18V11"/></svg>
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2" fill="var(--fg)"/><path d="M22 11v2" stroke="var(--fg)" fill="none"/></svg>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="pg-h">Calendar</div>
+          <div class="pg-sub">Week of May 12 – 18</div>
+          <div class="cal-head" style="margin-top:6px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <!-- day columns with events -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px;height:120px;">
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;gap:3px;"><span>12</span><div style="background:rgba(59,130,246,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--blue-2);line-height:1.2;">Q3 Retro</div><div style="background:rgba(167,139,250,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--violet);line-height:1.2;">Algo PS6</div></div>
+            <div style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);border-radius:5px;padding:4px 3px;font-size:9px;font-weight:700;color:var(--blue-2);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;gap:3px;"><span>13</span><div style="background:rgba(76,194,141,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--green);line-height:1.2;">Standup</div></div>
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;gap:3px;"><span>14</span><div style="background:rgba(245,179,91,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--amber);line-height:1.2;">Lab due</div></div>
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;gap:3px;"><span>15</span><div style="background:rgba(167,139,250,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--violet);line-height:1.2;">CS 320</div><div style="background:rgba(59,130,246,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--blue-2);line-height:1.2;">CS 471</div></div>
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;gap:3px;"><span>16</span><div style="background:rgba(76,194,141,.25);border-radius:3px;padding:3px 4px;font-size:8px;color:var(--green);line-height:1.2;">Standup</div></div>
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;"><span>17</span></div>
+            <div style="background:var(--bg-2);border-radius:5px;padding:4px 3px;font-size:9px;color:var(--fg-3);font-family:'JetBrains Mono',monospace;"><span>18</span></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:#f47358"></span>Today's schedule<span class="ct">5</span><span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row"><div style="width:10px;height:10px;border-radius:3px;background:var(--violet);flex-shrink:0"></div><span class="row-t">CS 320 — Lecture</span><span class="due">9:00am</span></div>
+            <div class="row"><div style="width:10px;height:10px;border-radius:3px;background:var(--blue);flex-shrink:0"></div><span class="row-t">Q3 Retrospective Draft</span><span class="due hot">10:30am</span></div>
+            <div class="row"><div style="width:10px;height:10px;border-radius:3px;background:var(--green);flex-shrink:0"></div><span class="row-t">Team standup</span><span class="due">2:00pm</span></div>
+            <div class="row"><div style="width:10px;height:10px;border-radius:3px;background:var(--amber);flex-shrink:0"></div><span class="row-t">Algorithms — pset 6</span><span class="due hot">11:59pm</span></div>
+          </div>
+          <div class="sh"><span class="dot" style="background:var(--fg-3)"></span>Upcoming<span class="rule"></span></div>
+          <div class="card-list">
+            <div class="row"><div class="cb"></div><span class="row-t">Lab 4 due — Network Sim</span><span class="chip chip-blue">lab</span><span class="due">Thu</span></div>
+            <div class="row"><div class="cb"></div><span class="row-t">Intro call with Mira</span><span class="chip chip-amb">admin</span><span class="due">Fri</span></div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-lbl">Home</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M22 10v6M2 10l10-7 10 7"/><path d="M6 10v8h12v-8"/></svg><span class="tab-lbl">School</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="tab-lbl">Tasks</span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" stroke-width="2.5"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span class="tab-lbl">Calendar</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg><span class="tab-lbl">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 5 — AI QUICK IMPORT
+═══════════════════════════════════════════════ -->
+<div class="screen screen-5" id="s5">
+  <div class="cap">
+    <div class="cap-eyebrow" style="color:#7dd3fc"><span class="dot"></span>AI-powered import<span class="dot"></span></div>
+    <h2>Paste a list.<br><span class="a5">AI does the rest.</span></h2>
+    <p>Paste anything — an email, notes, a syllabus — and BluTask extracts every task or assignment instantly.</p>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone" style="height:622px;">
+      <div class="app">
+        <div class="sb">
+          <span class="sb-time">9:41</span>
+          <div class="sb-icons">
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M1 6l5 5 5-5M6 18V11M13 6l5 5 5-5M18 18V11"/></svg>
+            <svg viewBox="0 0 24 24" fill="var(--fg)"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2" fill="var(--fg)"/><path d="M22 11v2" stroke="var(--fg)" fill="none"/></svg>
+          </div>
+        </div>
+        <div class="pg">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#3b82f6);display:grid;place-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="pg-h" style="margin:0">Quick Import</div>
+          </div>
+          <!-- pasted text preview -->
+          <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:10px;color:var(--fg-2);line-height:1.6;margin-bottom:10px;font-family:'JetBrains Mono',monospace;height:80px;overflow:hidden;">
+            <span style="color:var(--fg-3)">// Pasted from email:</span><br/>
+            CS 320 pset 6 due tomorrow 11:59pm<br/>
+            Email Prof. Chen about office hours<br/>
+            Lab report due May 15<br/>
+            <span style="color:var(--fg-3)">...</span>
+          </div>
+          <!-- AI result header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#6366f1,#3b82f6);display:grid;place-items:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg></div>
+              <span style="font-size:11px;font-weight:600;">Found 5 items</span>
+            </div>
+            <span style="font-size:10px;color:var(--fg-3)">Select to import</span>
+          </div>
+          <!-- parsed items -->
+          <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--hair);background:rgba(59,130,246,.06);">
+              <div style="width:14px;height:14px;border-radius:4px;background:var(--blue);flex-shrink:0;display:grid;place-items:center;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span style="flex:1;font-size:10.5px;font-weight:500;">Algorithms · Problem Set 6</span>
+              <span class="chip chip-vio">pset</span>
+              <span class="due hot">Tomorrow</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--hair);background:rgba(59,130,246,.06);">
+              <div style="width:14px;height:14px;border-radius:4px;background:var(--blue);flex-shrink:0;display:grid;place-items:center;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span style="flex:1;font-size:10.5px;font-weight:500;">Email Prof. Chen re: office hrs</span>
+              <span class="chip chip-amb">email</span>
+              <span class="due">Today</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--hair);background:rgba(59,130,246,.06);">
+              <div style="width:14px;height:14px;border-radius:4px;background:var(--blue);flex-shrink:0;display:grid;place-items:center;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <span style="flex:1;font-size:10.5px;font-weight:500;">Lab report — Network Sim</span>
+              <span class="chip chip-blue">lab</span>
+              <span class="due">May 15</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--hair);">
+              <div style="width:14px;height:14px;border-radius:4px;border:1.5px solid var(--fg-4);flex-shrink:0;"></div>
+              <span style="flex:1;font-size:10.5px;font-weight:500;color:var(--fg-2);">Reading — Ch. 14-16 OS</span>
+              <span class="due">May 18</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 11px;">
+              <div style="width:14px;height:14px;border-radius:4px;border:1.5px solid var(--fg-4);flex-shrink:0;"></div>
+              <span style="flex:1;font-size:10.5px;font-weight:500;color:var(--fg-2);">Quiz prep — Linear Algebra</span>
+              <span class="due">May 19</span>
+            </div>
+          </div>
+          <!-- add button -->
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;padding:10px;border-radius:9px;background:var(--bg-3);border:1px solid var(--border);text-align:center;font-size:11px;color:var(--fg-2);">Cancel</div>
+            <div style="flex:2;padding:10px;border-radius:9px;background:var(--blue);text-align:center;font-size:11px;font-weight:700;color:#fff;">Add 3 selected</div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-lbl">Home</span></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" stroke-width="2.5"><path d="M22 10v6M2 10l10-7 10 7"/><path d="M6 10v8h12v-8"/></svg><span class="tab-lbl">School</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="tab-lbl">Tasks</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span class="tab-lbl">Calendar</span></div>
+          <div class="tab"><svg viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg><span class="tab-lbl">More</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
