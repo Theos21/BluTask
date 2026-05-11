@@ -865,6 +865,7 @@ input, textarea, button { font-family: inherit; color: inherit; }
   .modal-content {
     border-radius: 1rem 1rem 0 0 !important;
     max-width: 100% !important; width: 100% !important; max-height: 92vh !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
 }
 

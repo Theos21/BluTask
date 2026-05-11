@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
@@ -17,6 +17,18 @@ export default function Auth() {
   const [success, setSuccess] = useState(location.state?.message || '')
   const { signIn, signUp } = useAuthStore()
   const navigate = useNavigate()
+
+  // Reset all OAuth loading states whenever auth state changes — handles:
+  //   • Successful sign-in via appUrlOpen callback (before redirect fires)
+  //   • User cancelling OAuth and returning to the app
+  //   • Any auth error that doesn't surface through the signInWithOAuth call itself
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      setGoogleLoading(false)
+      setAppleLoading(false)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -47,45 +59,43 @@ export default function Auth() {
   }
 
   async function handleGoogleSignIn() {
-    console.log('[Auth] Google Sign In tapped', {
-      isCapacitor,
-      isIOS,
-      origin: window.location.origin,
-    })
-
     setGoogleLoading(true)
     setError('')
 
-    // Capacitor: redirect back into the app via custom URL scheme.
-    // Web / Tauri: redirect back to the page origin.
-    // The custom scheme must be registered in:
-    //   iOS  → Info.plist CFBundleURLTypes
-    //   Android → AndroidManifest.xml intent-filter
-    //   Supabase → Auth > URL Configuration > Redirect URLs
     const redirectTo = isCapacitor
       ? 'com.blutask.app://auth/callback'
       : window.location.origin
 
-    console.log('[Auth] Calling signInWithOAuth → redirectTo:', redirectTo)
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo },
-    })
-
-    console.log('[Auth] signInWithOAuth returned →', {
-      url:   data?.url  ?? null,
-      error: error?.message ?? null,
-    })
-
-    if (error) {
-      console.log('[Auth] OAuth initiation failed:', error)
-      setError(error.message)
-      setGoogleLoading(false)
+    if (isCapacitor) {
+      // On Capacitor, navigating the WKWebView away to Google's auth page kills the
+      // Capacitor bridge. When iOS fires appUrlOpen on the callback URL, the listener
+      // in App.jsx is gone and the code exchange never happens.
+      //
+      // Fix: skipBrowserRedirect returns the auth URL without navigating; we then open
+      // it with window.open('_system') which launches Mobile Safari and keeps the
+      // WKWebView (and its appUrlOpen listener) alive.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      })
+      if (error) {
+        setError(error.message)
+        setGoogleLoading(false)
+      } else if (data?.url) {
+        window.open(data.url, '_system')
+        // Loading resets via onAuthStateChange when the callback completes,
+        // or if the user cancels and auth state fires anyway.
+      }
     } else {
-      // Browser / WebView navigates to Google — execution stops here.
-      // The appUrlOpen listener above handles the return trip.
-      console.log('[Auth] Redirecting to Google…', data?.url)
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      })
+      if (error) {
+        setError(error.message)
+        setGoogleLoading(false)
+      }
+      // On web, browser navigates to Google — App.jsx callback handles return.
     }
   }
 
@@ -97,16 +107,28 @@ export default function Auth() {
       ? 'com.blutask.app://auth/callback'
       : window.location.origin
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo },
-    })
-
-    if (error) {
-      setError(error.message)
-      setAppleLoading(false)
+    if (isCapacitor) {
+      // Same fix as Google: open in Mobile Safari to keep the WKWebView alive.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo, skipBrowserRedirect: true },
+      })
+      if (error) {
+        setError(error.message)
+        setAppleLoading(false)
+      } else if (data?.url) {
+        window.open(data.url, '_system')
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo },
+      })
+      if (error) {
+        setError(error.message)
+        setAppleLoading(false)
+      }
     }
-    // On success the browser navigates away; App.jsx callback handler resumes sign-in.
   }
 
   function switchMode(m) {

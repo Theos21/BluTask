@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Bell, BellOff, Mail, Calendar, BookOpen, Clock, Sunrise, FlaskConical, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Bell, BellOff, Mail, Calendar, BookOpen, Clock, Sunrise } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { supabase } from '../../lib/supabase'
@@ -10,9 +10,6 @@ import {
   rescheduleAll,
   getPermissionStatus,
   requestPermission,
-  sendTestNotification,
-  getExactAlarmStatus,
-  requestExactAlarmPermission,
 } from '../../services/localNotifications'
 import { isCapacitor } from '../../hooks/useMobileApp'
 
@@ -77,14 +74,10 @@ export default function NotificationsSection() {
   const [permStatus, setPermStatus] = useState(null)
   const [permLoading, setPermLoading] = useState(false)
   const [permError, setPermError] = useState(null)
-  const [exactAlarmStatus, setExactAlarmStatus] = useState(null)
-  const [testState, setTestState] = useState('idle')  // 'idle'|'sending'|'sent'|'error'
-  const [testError, setTestError] = useState(null)
 
   useEffect(() => {
     if (!isCapacitor) return
     getPermissionStatus().then(setPermStatus).catch(() => setPermStatus('error'))
-    getExactAlarmStatus().then(setExactAlarmStatus).catch(() => setExactAlarmStatus('unknown'))
   }, [])
 
   useEffect(() => {
@@ -117,26 +110,6 @@ export default function NotificationsSection() {
           ? 'Blocked — go to device Settings → Apps → BluTask → Notifications and enable them.'
           : `Not granted (status: ${status}). Try manually in device Settings.`
       )
-    }
-  }
-
-  async function handleRequestExactAlarm() {
-    await requestExactAlarmPermission()
-    // Re-check after returning from system settings
-    const status = await getExactAlarmStatus()
-    setExactAlarmStatus(status)
-  }
-
-  async function handleTestNotification() {
-    setTestError(null)
-    setTestState('sending')
-    const result = await sendTestNotification()
-    if (result.ok) {
-      setTestState('sent')
-      setTimeout(() => setTestState('idle'), 8000)
-    } else {
-      setTestState('error')
-      setTestError(result.reason)
     }
   }
 
@@ -289,102 +262,29 @@ export default function NotificationsSection() {
         )}
       </div>
 
-      {/* Debug panel — native only */}
-      {isCapacitor && (
-        <div className="rounded-xl bg-[#1e293b] overflow-hidden">
-          <div className="px-4 pt-4 pb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Notification Debug</p>
-          </div>
-          <div className="px-4 pb-4 space-y-3">
-
-            {/* Permission status */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">Permission</span>
-              <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                permGranted  ? 'bg-green-500/20 text-green-400' :
-                permDenied   ? 'bg-red-500/20 text-red-400' :
-                               'bg-yellow-500/20 text-yellow-400'
-              }`}>
-                {permGranted  ? <CheckCircle size={11} /> : permDenied ? <XCircle size={11} /> : <AlertCircle size={11} />}
-                {permStatus ?? 'unknown'}
-              </span>
-            </div>
-
-            {/* Grant permission */}
-            {permNeedsAsk && (
-              <button
-                onClick={handleRequestPermission}
-                disabled={permLoading}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Bell size={14} />
-                {permLoading ? 'Requesting…' : 'Grant notification permission'}
-              </button>
-            )}
-
-            {permError && (
-              <p className="text-xs text-red-400 leading-relaxed bg-red-500/10 rounded-lg px-3 py-2">
-                {permError}
-              </p>
-            )}
-
-            {/* Denied instructions */}
-            {permDenied && (
-              <p className="text-xs text-red-400 leading-relaxed">
-                Blocked by device. Open <strong>Settings → Apps → BluTask → Notifications</strong> and turn them on.
-              </p>
-            )}
-
-            {/* Exact alarm permission — Android 12+ only */}
-            {exactAlarmStatus !== null && exactAlarmStatus !== 'granted' && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-300">Exact alarms</span>
-                  <span className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
-                    <AlertCircle size={11} />
-                    {exactAlarmStatus ?? 'checking…'}
-                  </span>
-                </div>
-                <button
-                  onClick={handleRequestExactAlarm}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors"
-                >
-                  <Clock size={14} />
-                  Enable precise timing (Alarms &amp; reminders)
-                </button>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Without this, Android may delay reminders by minutes or hours to save battery.
-                </p>
-              </div>
-            )}
-
-            {/* Test notification — immediate, no plugin needed */}
+      {/* Permission prompt — native only, shown until granted */}
+      {isCapacitor && (permNeedsAsk || permDenied) && (
+        <div className="rounded-xl bg-[#1e293b] px-4 py-4 space-y-3">
+          {permNeedsAsk && (
             <button
-              onClick={handleTestNotification}
-              disabled={!permGranted || testState === 'sending'}
-              className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                !permGranted              ? 'opacity-40 cursor-not-allowed bg-gray-700 text-gray-400' :
-                testState === 'sending'  ? 'opacity-60 cursor-not-allowed bg-gray-700 text-gray-300' :
-                testState === 'sent'     ? 'bg-green-600/30 text-green-300' :
-                testState === 'error'    ? 'bg-red-600/30 text-red-300' :
-                'bg-[color:var(--color-accent)]/20 text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent)]/30'
-              }`}
+              onClick={handleRequestPermission}
+              disabled={permLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium bg-[color:var(--color-accent)]/20 text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent)]/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <FlaskConical size={14} />
-              {testState === 'sending' ? 'Scheduling…' :
-               testState === 'sent'    ? '✓ Notification sent!' :
-               testState === 'error'   ? 'Failed — see below' :
-               !permGranted            ? 'Grant permission first' :
-               'Send test notification'}
+              <Bell size={14} />
+              {permLoading ? 'Requesting…' : 'Enable push notifications'}
             </button>
-
-            {testState === 'error' && testError && (
-              <p className="text-xs text-red-400 font-mono break-all bg-red-500/10 rounded-lg px-3 py-2">
-                {testError}
-              </p>
-            )}
-
-          </div>
+          )}
+          {permError && (
+            <p className="text-xs text-red-400 leading-relaxed bg-red-500/10 rounded-lg px-3 py-2">
+              {permError}
+            </p>
+          )}
+          {permDenied && (
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Notifications are blocked. Open <strong className="text-gray-300">Settings → BluTask → Notifications</strong> to enable them.
+            </p>
+          )}
         </div>
       )}
 

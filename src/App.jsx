@@ -6,7 +6,7 @@ import { supabase } from './lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { initPushNotifications, savePushToken } from './services/notifications'
 import {
-  requestWebPermission,
+  getPermissionStatus,
   rescheduleAll,
   addLocalNotificationListener,
 } from './services/localNotifications'
@@ -104,8 +104,8 @@ export default function App() {
     let removeListener = () => {}
 
     async function setupLocalNotifications() {
-      const granted = await requestWebPermission()
-      if (!granted) return
+      const status = await getPermissionStatus()
+      if (status !== 'granted') return  // don't prompt on launch — user enables via Settings
 
       // Re-sync all scheduled notifications against current DB state
       const [{ data: tasks }, { data: assignments }, { data: prefs }] = await Promise.all([
