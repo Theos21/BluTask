@@ -256,8 +256,16 @@ export default function Tasks() {
 
   const unfolderedLists = lists.filter(l => !l.folder_id)
 
-  function openCtxTag(e, id) {
-    openContextMenu(e, 'tag', id)
+  function openCtxRenameTag(id) {
+    const tag = tags.find(t => t.id === id)
+    if (tag) { setRenamingTagId(tag.id); setRenameTagValue(tag.name) }
+    setCtxMenu(null)
+  }
+
+  function handleCtxDeleteTag(id) {
+    const tag = tags.find(t => t.id === id)
+    setDeleteConfirm({ type: 'tag', id, name: tag?.name || 'this tag' })
+    setCtxMenu(null)
   }
 
   const ctxItems = ctxMenu?.type === 'folder'
@@ -273,8 +281,8 @@ export default function Tasks() {
       ]
     : ctxMenu?.type === 'tag'
     ? [
-        { label: 'Rename tag', onClick: () => { const tag = tags.find(t => t.id === ctxMenu.id); if (tag) { setRenamingTagId(tag.id); setRenameTagValue(tag.name) } setCtxMenu(null) } },
-        { label: 'Delete tag', onClick: () => { setDeleteConfirm({ type: 'tag', id: ctxMenu.id, name: tags.find(t => t.id === ctxMenu.id)?.name }); setCtxMenu(null) }, danger: true },
+        { label: 'Rename tag', onClick: () => openCtxRenameTag(ctxMenu.id) },
+        { label: 'Delete tag', onClick: () => handleCtxDeleteTag(ctxMenu.id), danger: true },
       ]
     : []
 
@@ -387,14 +395,25 @@ export default function Tasks() {
           {tags.length > 0 && (
             <div className="mt-4">
               <div className="border-t border-gray-100 dark:border-gray-800/60 mb-3" />
-              <button
-                onClick={() => setTagsCollapsed(p => !p)}
-                className="w-full flex items-center gap-2 px-2.5 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors select-none"
-              >
-                {tagsCollapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                <Tag size={10} />
-                Tags
-              </button>
+              <div className="flex items-center mb-1.5">
+                <button
+                  onClick={() => setTagsCollapsed(p => !p)}
+                  className="flex-1 flex items-center gap-2 px-2.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors select-none"
+                >
+                  {tagsCollapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                  <Tag size={10} />
+                  Tags
+                </button>
+                <button
+                  title="Manage tags"
+                  onClick={() => { setManageTab('tags'); setManageSheetOpen(true) }}
+                  className="p-1 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mr-1"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </button>
+              </div>
               {!tagsCollapsed && (
                 <div className="space-y-0.5">
                   {tags.map(tag => (
@@ -514,9 +533,9 @@ export default function Tasks() {
           </button>
         </div>
 
-        {/* Mobile manage sheet — lists, folders, tags */}
+        {/* Manage sheet — lists, folders, tags (web + mobile) */}
         {manageSheetOpen && (
-          <div className="fixed inset-0 z-50 flex items-end md:hidden" onClick={e => { if (e.target === e.currentTarget) { setManageSheetOpen(false); setMobileRenaming(null) } }}>
+          <div className="fixed inset-0 z-50 flex items-end" onClick={e => { if (e.target === e.currentTarget) { setManageSheetOpen(false); setMobileRenaming(null) } }}>
             <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 flex flex-col max-h-[75vh]">
               <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                 <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
