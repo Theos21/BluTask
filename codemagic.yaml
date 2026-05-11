@@ -153,34 +153,20 @@ workflows:
 
       - name: Build IPA
         script: |
-          set -o pipefail
-          mkdir -p /tmp/xcodebuild_logs build/ios/ipa
+          set -eo pipefail
+          mkdir -p /tmp/xcodebuild_logs
 
           WORKSPACE="ios/App/App.xcworkspace"
           if [ -d "$WORKSPACE" ]; then
-            BUILD_FLAG="-workspace $WORKSPACE"
+            BUILD_FLAG="--workspace $WORKSPACE"
           else
-            BUILD_FLAG="-project $XCODE_PROJECT"
+            BUILD_FLAG="--project $XCODE_PROJECT"
           fi
 
-          echo "=== Step 1: Archive ==="
-          xcodebuild archive \
+          xcode-project build-ipa \
             $BUILD_FLAG \
-            -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            -archivePath /tmp/BluTask.xcarchive \
-            -destination "generic/platform=iOS" \
-            CODE_SIGN_STYLE=Manual \
-            2>&1 | tee /tmp/xcodebuild_logs/archive.log
-          echo "Archive exit code: $?"
-
-          echo "=== Step 2: Export IPA ==="
-          xcodebuild -exportArchive \
-            -archivePath /tmp/BluTask.xcarchive \
-            -exportOptionsPlist ios/ExportOptions.plist \
-            -exportPath build/ios/ipa \
-            2>&1 | tee /tmp/xcodebuild_logs/export.log
-          echo "Export exit code: $?"
+            --scheme "$XCODE_SCHEME" \
+            2>&1 | tee /tmp/xcodebuild_logs/build.log
 
           echo "=== IPA output ==="
           find build/ios/ipa -type f
