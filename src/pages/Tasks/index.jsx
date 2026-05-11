@@ -35,7 +35,7 @@ function ListNavItem({ active, onClick, onContextMenu, color, name, count }) {
 
 export default function Tasks() {
   const { user } = useAuthStore()
-  const { lists, tasks, headers, fetchLists, fetchTasks, fetchHeaders, deleteList, addHeader, updateHeader, deleteHeader } = useTaskStore()
+  const { lists, tasks, headers, fetchLists, fetchTasks, fetchHeaders, deleteList, updateList, addHeader, updateHeader, deleteHeader } = useTaskStore()
   const { folders, fetchFolders, updateFolder, deleteFolder } = useFolderStore()
   const { tags, taskTags, fetchTags, fetchTaskTags, deleteTag, updateTag } = useTagStore()
   const { assignments: schoolAssignments, classes: schoolClasses, fetchAssignments: fetchSchoolAssignments } = useSchoolStore()
@@ -67,7 +67,9 @@ export default function Tasks() {
 
   const [renamingTagId, setRenamingTagId] = useState(null)
   const [renameTagValue, setRenameTagValue] = useState('')
-  const [tagManageOpen, setTagManageOpen] = useState(false)
+  const [manageSheetOpen, setManageSheetOpen] = useState(false)
+  const [manageTab, setManageTab] = useState('lists')
+  const [mobileRenaming, setMobileRenaming] = useState(null) // { type, id, value }
 
   const [addingHeader, setAddingHeader] = useState(false)
   const [newHeaderTitle, setNewHeaderTitle] = useState('')
@@ -396,7 +398,7 @@ export default function Tasks() {
               {!tagsCollapsed && (
                 <div className="space-y-0.5">
                   {tags.map(tag => (
-                    <div key={tag.id} className="flex items-center gap-1">
+                    <div key={tag.id} className="flex items-center">
                       {renamingTagId === tag.id ? (
                         <input
                           autoFocus
@@ -417,7 +419,7 @@ export default function Tasks() {
                         <button
                           onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
                           onContextMenu={e => openCtxTag(e, tag.id)}
-                          className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
+                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
                             selectedView.type === 'tag' && selectedView.id === tag.id
                               ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
                               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-700 dark:hover:text-gray-300'
@@ -425,15 +427,6 @@ export default function Tasks() {
                         >
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
                           <span className="flex-1 truncate">{tag.name}</span>
-                        </button>
-                      )}
-                      {renamingTagId !== tag.id && (
-                        <button
-                          title="Tag options"
-                          onClick={e => openCtxTag(e, tag.id)}
-                          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                         </button>
                       )}
                     </div>
@@ -511,82 +504,160 @@ export default function Tasks() {
               {tag.name}
             </button>
           ))}
-          {/* Mobile action buttons */}
+          {/* Mobile manage button */}
           <div className="flex-shrink-0 w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1 self-center" />
           <button
-            onClick={() => { setEditList(null); setDefaultFolderId(null); setListModalOpen(true) }}
+            onClick={() => setManageSheetOpen(true)}
             className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
           >
-            <Plus size={11} /> List
+            Manage
           </button>
-          <button
-            onClick={() => { setEditFolder(null); setFolderModalOpen(true) }}
-            className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-          >
-            <Plus size={11} /> Folder
-          </button>
-          {tags.length > 0 && (
-            <button
-              onClick={() => setTagManageOpen(true)}
-              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-            >
-              <Tag size={11} /> Manage tags
-            </button>
-          )}
         </div>
 
-        {/* Mobile tag management sheet */}
-        {tagManageOpen && (
-          <div className="fixed inset-0 z-50 flex items-end md:hidden" onClick={e => { if (e.target === e.currentTarget) setTagManageOpen(false) }}>
-            <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 p-4 pb-8">
-              <div className="flex justify-center mb-4">
+        {/* Mobile manage sheet — lists, folders, tags */}
+        {manageSheetOpen && (
+          <div className="fixed inset-0 z-50 flex items-end md:hidden" onClick={e => { if (e.target === e.currentTarget) { setManageSheetOpen(false); setMobileRenaming(null) } }}>
+            <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 flex flex-col max-h-[75vh]">
+              <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                 <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
               </div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Manage Tags</h3>
-                <button onClick={() => setTagManageOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <div className="flex items-center justify-between px-4 py-2 flex-shrink-0">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Manage</h3>
+                <button onClick={() => { setManageSheetOpen(false); setMobileRenaming(null) }} className="p-1.5 rounded-lg text-gray-400">
                   <X size={16} />
                 </button>
               </div>
-              <div className="space-y-1">
-                {tags.map(tag => (
-                  <div key={tag.id} className="flex items-center gap-3 px-2 py-2.5 rounded-lg">
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                    {renamingTagId === tag.id ? (
-                      <input
-                        autoFocus
-                        value={renameTagValue}
-                        onChange={e => setRenameTagValue(e.target.value)}
-                        onBlur={async () => {
-                          const trimmed = renameTagValue.trim()
-                          if (trimmed && trimmed !== tag.name) await updateTag(tag.id, { name: trimmed })
-                          setRenamingTagId(null)
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') e.target.blur()
-                          if (e.key === 'Escape') setRenamingTagId(null)
-                        }}
-                        className="flex-1 text-sm bg-transparent border-b border-teal-400 outline-none text-gray-900 dark:text-gray-100"
-                      />
-                    ) : (
-                      <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{tag.name}</span>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => { setRenamingTagId(tag.id); setRenameTagValue(tag.name) }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                      <button
-                        onClick={() => { setTagManageOpen(false); setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.name }) }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
+              {/* Tabs */}
+              <div className="flex gap-1 px-4 pb-2 flex-shrink-0">
+                {['lists', 'folders', 'tags'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => { setManageTab(tab); setMobileRenaming(null) }}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize ${
+                      manageTab === tab
+                        ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {tab}
+                  </button>
                 ))}
+              </div>
+              <div className="overflow-y-auto flex-1 px-2 pb-6">
+                {manageTab === 'lists' && (
+                  <div className="space-y-0.5">
+                    {lists.map(list => (
+                      <div key={list.id} className="flex items-center gap-2 px-2 py-2.5 rounded-lg">
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
+                        {mobileRenaming?.type === 'list' && mobileRenaming.id === list.id ? (
+                          <input
+                            autoFocus
+                            value={mobileRenaming.value}
+                            onChange={e => setMobileRenaming(r => ({ ...r, value: e.target.value }))}
+                            onBlur={async () => {
+                              const v = mobileRenaming.value.trim()
+                              if (v && v !== list.name) await updateList(list.id, { name: v })
+                              setMobileRenaming(null)
+                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setMobileRenaming(null) }}
+                            className="flex-1 text-sm bg-transparent border-b border-teal-400 outline-none text-gray-900 dark:text-gray-100"
+                          />
+                        ) : (
+                          <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{list.name}</span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setMobileRenaming({ type: 'list', id: list.id, value: list.name })} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button onClick={() => { setManageSheetOpen(false); setDeleteConfirm({ type: 'list', id: list.id, name: list.name }) }} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 dark:hover:text-rose-400">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => { setManageSheetOpen(false); setEditList(null); setDefaultFolderId(null); setListModalOpen(true) }}
+                      className="w-full flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm text-teal-500 dark:text-teal-400"
+                    >
+                      <Plus size={14} /> New list
+                    </button>
+                  </div>
+                )}
+                {manageTab === 'folders' && (
+                  <div className="space-y-0.5">
+                    {folders.map(folder => (
+                      <div key={folder.id} className="flex items-center gap-2 px-2 py-2.5 rounded-lg">
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">📁</span>
+                        {mobileRenaming?.type === 'folder' && mobileRenaming.id === folder.id ? (
+                          <input
+                            autoFocus
+                            value={mobileRenaming.value}
+                            onChange={e => setMobileRenaming(r => ({ ...r, value: e.target.value }))}
+                            onBlur={async () => {
+                              const v = mobileRenaming.value.trim()
+                              if (v && v !== folder.name) await updateFolder(folder.id, { name: v })
+                              setMobileRenaming(null)
+                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setMobileRenaming(null) }}
+                            className="flex-1 text-sm bg-transparent border-b border-teal-400 outline-none text-gray-900 dark:text-gray-100"
+                          />
+                        ) : (
+                          <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{folder.name}</span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setMobileRenaming({ type: 'folder', id: folder.id, value: folder.name })} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button onClick={() => { setManageSheetOpen(false); setDeleteConfirm({ type: 'folder', id: folder.id, name: folder.name }) }} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 dark:hover:text-rose-400">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => { setManageSheetOpen(false); setEditFolder(null); setFolderModalOpen(true) }}
+                      className="w-full flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm text-teal-500 dark:text-teal-400"
+                    >
+                      <Plus size={14} /> New folder
+                    </button>
+                  </div>
+                )}
+                {manageTab === 'tags' && (
+                  <div className="space-y-0.5">
+                    {tags.map(tag => (
+                      <div key={tag.id} className="flex items-center gap-2 px-2 py-2.5 rounded-lg">
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                        {mobileRenaming?.type === 'tag' && mobileRenaming.id === tag.id ? (
+                          <input
+                            autoFocus
+                            value={mobileRenaming.value}
+                            onChange={e => setMobileRenaming(r => ({ ...r, value: e.target.value }))}
+                            onBlur={async () => {
+                              const v = mobileRenaming.value.trim()
+                              if (v && v !== tag.name) await updateTag(tag.id, { name: v })
+                              setMobileRenaming(null)
+                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setMobileRenaming(null) }}
+                            className="flex-1 text-sm bg-transparent border-b border-teal-400 outline-none text-gray-900 dark:text-gray-100"
+                          />
+                        ) : (
+                          <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{tag.name}</span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setMobileRenaming({ type: 'tag', id: tag.id, value: tag.name })} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button onClick={() => { setManageSheetOpen(false); setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.name }) }} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 dark:hover:text-rose-400">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {tags.length === 0 && (
+                      <p className="px-2 py-3 text-sm text-gray-400 dark:text-gray-500">No tags yet. Create one inside a task.</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
