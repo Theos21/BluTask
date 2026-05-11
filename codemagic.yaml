@@ -163,11 +163,8 @@ workflows:
 
       - name: Set build number
         script: |
-          git fetch --unshallow 2>/dev/null || true
-          BUILD_NUMBER=$(git rev-list --count HEAD)
-          echo "Build number: $BUILD_NUMBER"
           cd ios/App
-          xcrun agvtool new-version -all "$BUILD_NUMBER"
+          xcrun agvtool new-version -all 52
 
       - name: Build IPA
         script: |
