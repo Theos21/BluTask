@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Plus, CheckSquare, Inbox, ChevronRight, ChevronDown, Tag, Trash2, Upload, ArrowUpDown, Filter, X, Star, Clock, GraduationCap } from 'lucide-react'
+import { Plus, CheckSquare, Inbox, ChevronRight, ChevronDown, Tag, Trash2, Sparkles, ArrowUpDown, Filter, X, Star, Clock, GraduationCap } from 'lucide-react'
 import { isPast, isToday, addDays, isSameDay, startOfDay, format } from 'date-fns'
 import { useTaskStore } from '../../stores/useTaskStore'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -489,7 +489,7 @@ export default function Tasks() {
             </h1>
           </div>
           <button onClick={() => setImportModalOpen(true)} className="btn-ghost text-xs flex items-center gap-1.5">
-            <Upload size={13} /> Quick import
+            <Sparkles size={13} /> Quick import
           </button>
         </div>
 
