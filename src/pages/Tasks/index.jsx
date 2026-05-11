@@ -254,6 +254,10 @@ export default function Tasks() {
 
   const unfolderedLists = lists.filter(l => !l.folder_id)
 
+  function openCtxTag(e, id) {
+    openContextMenu(e, 'tag', id)
+  }
+
   const ctxItems = ctxMenu?.type === 'folder'
     ? [
         { label: 'Rename folder', onClick: () => openCtxEditFolder(ctxMenu.id) },
@@ -264,6 +268,11 @@ export default function Tasks() {
     ? [
         { label: 'Rename list', onClick: () => openCtxEditList(ctxMenu.id) },
         { label: 'Delete list', onClick: () => handleCtxDeleteList(ctxMenu.id), danger: true },
+      ]
+    : ctxMenu?.type === 'tag'
+    ? [
+        { label: 'Rename tag', onClick: () => { const tag = tags.find(t => t.id === ctxMenu.id); if (tag) { setRenamingTagId(tag.id); setRenameTagValue(tag.name) } setCtxMenu(null) } },
+        { label: 'Delete tag', onClick: () => { setDeleteConfirm({ type: 'tag', id: ctxMenu.id, name: tags.find(t => t.id === ctxMenu.id)?.name }); setCtxMenu(null) }, danger: true },
       ]
     : []
 
@@ -387,7 +396,7 @@ export default function Tasks() {
               {!tagsCollapsed && (
                 <div className="space-y-0.5">
                   {tags.map(tag => (
-                    <div key={tag.id} className="group relative flex items-center">
+                    <div key={tag.id} className="flex items-center gap-1">
                       {renamingTagId === tag.id ? (
                         <input
                           autoFocus
@@ -407,6 +416,7 @@ export default function Tasks() {
                       ) : (
                         <button
                           onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
+                          onContextMenu={e => openCtxTag(e, tag.id)}
                           className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
                             selectedView.type === 'tag' && selectedView.id === tag.id
                               ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
@@ -418,22 +428,13 @@ export default function Tasks() {
                         </button>
                       )}
                       {renamingTagId !== tag.id && (
-                        <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            title="Rename tag"
-                            onClick={() => { setRenamingTagId(tag.id); setRenameTagValue(tag.name) }}
-                            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
-                          <button
-                            title="Delete tag"
-                            onClick={() => setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.name })}
-                            className="p-1 rounded text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                          >
-                            <Trash2 size={10} />
-                          </button>
-                        </div>
+                        <button
+                          title="Tag options"
+                          onClick={e => openCtxTag(e, tag.id)}
+                          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                        </button>
                       )}
                     </div>
                   ))}
