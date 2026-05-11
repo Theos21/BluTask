@@ -54,7 +54,10 @@ export default function SmartImportModal({ isOpen, onClose }) {
 
       if (error) {
         console.log('[QuickImport] supabase error object:', JSON.stringify(error))
-        setError(`Function error: ${error.message || JSON.stringify(error)}`)
+        const isNetworkError = error.name === 'FunctionsFetchError' || error.message?.toLowerCase().includes('fetch')
+        setError(isNetworkError
+          ? 'Could not reach the AI service. Check your connection and try again.'
+          : `AI error: ${error.message || JSON.stringify(error)}`)
         return
       }
       if (data?.error) {
