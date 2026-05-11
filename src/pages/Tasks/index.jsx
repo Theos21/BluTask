@@ -37,7 +37,7 @@ export default function Tasks() {
   const { user } = useAuthStore()
   const { lists, tasks, headers, fetchLists, fetchTasks, fetchHeaders, deleteList, addHeader, updateHeader, deleteHeader } = useTaskStore()
   const { folders, fetchFolders, updateFolder, deleteFolder } = useFolderStore()
-  const { tags, taskTags, fetchTags, fetchTaskTags } = useTagStore()
+  const { tags, taskTags, fetchTags, fetchTaskTags, deleteTag, updateTag } = useTagStore()
   const { assignments: schoolAssignments, classes: schoolClasses, fetchAssignments: fetchSchoolAssignments } = useSchoolStore()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -64,6 +64,10 @@ export default function Tasks() {
   const [ctxMenu, setCtxMenu] = useState(null)
   const ctxMenuRef = useRef(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+
+  const [renamingTagId, setRenamingTagId] = useState(null)
+  const [renameTagValue, setRenameTagValue] = useState('')
+  const [tagManageOpen, setTagManageOpen] = useState(false)
 
   const [addingHeader, setAddingHeader] = useState(false)
   const [newHeaderTitle, setNewHeaderTitle] = useState('')
@@ -242,6 +246,9 @@ export default function Tasks() {
       if (selectedView.id === id) setSelectedView({ type: 'inbox' })
     } else if (type === 'header') {
       await deleteHeader(id)
+    } else if (type === 'tag') {
+      await deleteTag(id)
+      if (selectedView.type === 'tag' && selectedView.id === id) setSelectedView({ type: 'inbox' })
     }
   }
 
@@ -380,18 +387,55 @@ export default function Tasks() {
               {!tagsCollapsed && (
                 <div className="space-y-0.5">
                   {tags.map(tag => (
-                    <button
-                      key={tag.id}
-                      onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
-                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
-                        selectedView.type === 'tag' && selectedView.id === tag.id
-                          ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
-                          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                      <span className="flex-1 truncate">{tag.name}</span>
-                    </button>
+                    <div key={tag.id} className="group relative flex items-center">
+                      {renamingTagId === tag.id ? (
+                        <input
+                          autoFocus
+                          value={renameTagValue}
+                          onChange={e => setRenameTagValue(e.target.value)}
+                          onBlur={async () => {
+                            const trimmed = renameTagValue.trim()
+                            if (trimmed && trimmed !== tag.name) await updateTag(tag.id, { name: trimmed })
+                            setRenamingTagId(null)
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') e.target.blur()
+                            if (e.key === 'Escape') setRenamingTagId(null)
+                          }}
+                          className="flex-1 px-2.5 py-1.5 rounded-md text-xs bg-white dark:bg-gray-800 border border-teal-300 dark:border-teal-600 text-gray-900 dark:text-gray-100 outline-none"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
+                          className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
+                            selectedView.type === 'tag' && selectedView.id === tag.id
+                              ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-700 dark:hover:text-gray-300'
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                          <span className="flex-1 truncate">{tag.name}</span>
+                        </button>
+                      )}
+                      {renamingTagId !== tag.id && (
+                        <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            title="Rename tag"
+                            onClick={() => { setRenamingTagId(tag.id); setRenameTagValue(tag.name) }}
+                            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button
+                            title="Delete tag"
+                            onClick={() => setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.name })}
+                            className="p-1 rounded text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -466,7 +510,86 @@ export default function Tasks() {
               {tag.name}
             </button>
           ))}
+          {/* Mobile action buttons */}
+          <div className="flex-shrink-0 w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1 self-center" />
+          <button
+            onClick={() => { setEditList(null); setDefaultFolderId(null); setListModalOpen(true) }}
+            className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+          >
+            <Plus size={11} /> List
+          </button>
+          <button
+            onClick={() => { setEditFolder(null); setFolderModalOpen(true) }}
+            className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+          >
+            <Plus size={11} /> Folder
+          </button>
+          {tags.length > 0 && (
+            <button
+              onClick={() => setTagManageOpen(true)}
+              className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+            >
+              <Tag size={11} /> Manage tags
+            </button>
+          )}
         </div>
+
+        {/* Mobile tag management sheet */}
+        {tagManageOpen && (
+          <div className="fixed inset-0 z-50 flex items-end md:hidden" onClick={e => { if (e.target === e.currentTarget) setTagManageOpen(false) }}>
+            <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 p-4 pb-8">
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Manage Tags</h3>
+                <button onClick={() => setTagManageOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-1">
+                {tags.map(tag => (
+                  <div key={tag.id} className="flex items-center gap-3 px-2 py-2.5 rounded-lg">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                    {renamingTagId === tag.id ? (
+                      <input
+                        autoFocus
+                        value={renameTagValue}
+                        onChange={e => setRenameTagValue(e.target.value)}
+                        onBlur={async () => {
+                          const trimmed = renameTagValue.trim()
+                          if (trimmed && trimmed !== tag.name) await updateTag(tag.id, { name: trimmed })
+                          setRenamingTagId(null)
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') e.target.blur()
+                          if (e.key === 'Escape') setRenamingTagId(null)
+                        }}
+                        className="flex-1 text-sm bg-transparent border-b border-teal-400 outline-none text-gray-900 dark:text-gray-100"
+                      />
+                    ) : (
+                      <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{tag.name}</span>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setRenamingTagId(tag.id); setRenameTagValue(tag.name) }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button
+                        onClick={() => { setTagManageOpen(false); setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.name }) }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Top bar */}
         <div className="px-4 pt-4 pb-3 md:px-8 md:pt-6 md:pb-4 border-b border-gray-100 dark:border-gray-800/60 flex-shrink-0 flex items-center justify-between">
@@ -1021,25 +1144,20 @@ export default function Tasks() {
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
         onConfirm={handleConfirmDelete}
-        title={
-          deleteConfirm?.type === 'folder'
-            ? `Delete ${deleteConfirm.name}?`
-            : deleteConfirm?.type === 'list'
-            ? `Delete ${deleteConfirm.name}?`
-            : `Delete section "${deleteConfirm?.name}"?`
-        }
+        title={`Delete "${deleteConfirm?.name}"?`}
         description={
           deleteConfirm?.type === 'folder'
             ? 'This will permanently delete the folder and all lists and tasks inside it. This cannot be undone.'
             : deleteConfirm?.type === 'list'
             ? 'All tasks in this list will be permanently deleted. This cannot be undone.'
+            : deleteConfirm?.type === 'tag'
+            ? 'This tag will be removed from all tasks. This cannot be undone.'
             : 'This section header will be removed. Tasks inside it will remain. This cannot be undone.'
         }
         confirmLabel={
-          deleteConfirm?.type === 'folder'
-            ? 'Delete folder'
-            : deleteConfirm?.type === 'list'
-            ? 'Delete list'
+          deleteConfirm?.type === 'folder' ? 'Delete folder'
+            : deleteConfirm?.type === 'list' ? 'Delete list'
+            : deleteConfirm?.type === 'tag' ? 'Delete tag'
             : 'Delete section'
         }
       />
