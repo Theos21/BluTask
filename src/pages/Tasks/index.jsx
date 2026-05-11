@@ -437,7 +437,7 @@ export default function Tasks() {
                       ) : (
                         <button
                           onClick={() => setSelectedView({ type: 'tag', id: tag.id })}
-                          onContextMenu={e => openCtxTag(e, tag.id)}
+                          onContextMenu={e => openContextMenu(e, 'tag', tag.id)}
                           className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
                             selectedView.type === 'tag' && selectedView.id === tag.id
                               ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-medium'
