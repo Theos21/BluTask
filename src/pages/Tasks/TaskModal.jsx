@@ -41,6 +41,7 @@ export default function TaskModal({
   // Tags
   const [selectedTagIds, setSelectedTagIds] = useState([])
   const [showNewTag, setShowNewTag] = useState(false)
+  const [managingTags, setManagingTags] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[1])
 
@@ -72,6 +73,7 @@ export default function TaskModal({
     }
     setNewCheckItem('')
     setShowNewTag(false)
+    setManagingTags(false)
     setNewTagName('')
     setNotesPreview(false)
     setError('')
@@ -275,51 +277,85 @@ export default function TaskModal({
 
         {/* Tags */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">
-            <Tag size={11} />
-            Tags
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+              <Tag size={11} />
+              Tags
+            </label>
+            {tags.length > 0 && !managingTags && (
+              <button
+                type="button"
+                onClick={() => setManagingTags(true)}
+                className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                Manage
+              </button>
+            )}
+            {managingTags && (
+              <button
+                type="button"
+                onClick={() => setManagingTags(false)}
+                className="text-[11px] text-teal-500 hover:text-teal-600 transition-colors font-medium"
+              >
+                Done
+              </button>
+            )}
+          </div>
 
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {tags.map((tag) => {
-                const selected = selectedTagIds.includes(tag.id)
-                return (
-                  <div
-                    key={tag.id}
-                    className={`inline-flex items-center gap-0.5 rounded-full border text-[11px] font-medium transition-all ${
-                      selected
-                        ? 'border-transparent'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}
-                    style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
+          {/* Manage mode: list with delete buttons */}
+          {managingTags ? (
+            <div className="space-y-1 mb-2">
+              {tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  <span className="flex-1 text-xs text-gray-800 dark:text-gray-200">{tag.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteTag(tag.id)
+                      setSelectedTagIds((prev) => prev.filter((id) => id !== tag.id))
+                    }}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
                   >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Normal mode: pills for selecting */
+            tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {tags.map((tag) => {
+                  const selected = selectedTagIds.includes(tag.id)
+                  return (
                     <button
+                      key={tag.id}
                       type="button"
                       onClick={() => toggleTag(tag.id)}
-                      className="pl-2.5 pr-1.5 py-1"
+                      className={`text-[11px] px-2.5 py-1 rounded-full font-medium border transition-all ${
+                        selected
+                          ? 'border-transparent'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      style={selected ? { backgroundColor: tag.color + '25', color: tag.color, borderColor: tag.color + '60' } : {}}
                     >
                       {selected && <span className="mr-1">✓</span>}
                       {tag.name}
                     </button>
-                    <button
-                      type="button"
-                      title="Delete tag"
-                      onClick={() => {
-                        deleteTag(tag.id)
-                        setSelectedTagIds((prev) => prev.filter((id) => id !== tag.id))
-                      }}
-                      className="pr-2 py-1 text-gray-300 dark:text-gray-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                    >
-                      <X size={9} />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )
           )}
 
-          {showNewTag ? (
+          {!managingTags && (showNewTag ? (
             <div className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
               <input
                 autoFocus
@@ -354,7 +390,7 @@ export default function TaskModal({
               <Plus size={12} />
               New tag
             </button>
-          )}
+          ))}
         </div>
 
         {/* Checklist */}
