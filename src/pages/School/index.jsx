@@ -39,15 +39,82 @@ function SortableClassCard({
   const total = allClsAssign.length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
 
+  const dndStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+
+  // ── Compact mobile card ──────────────────────────────────────────────────
+  if (isMobile) {
+    const meta = [cls.period && `P${cls.period}`, cls.room && `Rm ${cls.room}`].filter(Boolean).join(' · ')
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          ...dndStyle,
+          background: 'var(--bg-3)',
+          border: '1px solid var(--border)',
+          borderLeft: `3px solid ${cls.color}`,
+          borderRadius: 8,
+          padding: '9px 9px 9px 11px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          minHeight: 0,
+        }}
+      >
+        {editingOrder && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
+            <button onClick={onMoveUp} disabled={isFirst} className="icon-btn ghost"
+              style={{ padding: 2, minHeight: 'auto', minWidth: 'auto', height: 18 }}>
+              <ArrowUp size={10} />
+            </button>
+            <button onClick={onMoveDown} disabled={isLast} className="icon-btn ghost"
+              style={{ padding: 2, minHeight: 'auto', minWidth: 'auto', height: 18 }}>
+              <ArrowDown size={10} />
+            </button>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
+            {cls.name}
+          </div>
+          {meta && (
+            <div style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2, lineHeight: 1 }}>{meta}</div>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          {pending > 0 && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: cls.color,
+              background: `${cls.color}22`, borderRadius: 99,
+              padding: '1px 6px', lineHeight: 1.6, flexShrink: 0,
+            }}>
+              {pending}
+            </span>
+          )}
+          <button className="icon-btn ghost" onClick={onEdit}
+            style={{ padding: 5, minHeight: 'auto', minWidth: 'auto' }}>
+            <Pencil size={11} />
+          </button>
+          <button className="icon-btn ghost" onClick={onDelete}
+            style={{ padding: 5, minHeight: 'auto', minWidth: 'auto', color: 'var(--fg-4)' }}>
+            <Trash2 size={11} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Full desktop card ────────────────────────────────────────────────────
   return (
     <div
       ref={setNodeRef}
       className="class-card"
       style={{
         borderLeft: `3px solid ${cls.color}`,
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.4 : 1,
+        ...dndStyle,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -71,26 +138,15 @@ function SortableClassCard({
         </div>
         <div style={{ display: 'flex', gap: 2, flexShrink: 0, marginTop: -2, alignItems: 'center' }}>
           {editingOrder && (
-            isMobile ? (
-              <>
-                <button onClick={onMoveUp} disabled={isFirst} className="icon-btn ghost" title="Move up">
-                  <ArrowUp size={11} />
-                </button>
-                <button onClick={onMoveDown} disabled={isLast} className="icon-btn ghost" title="Move down">
-                  <ArrowDown size={11} />
-                </button>
-              </>
-            ) : (
-              <button
-                {...listeners}
-                {...attributes}
-                className="icon-btn ghost"
-                style={{ cursor: 'grab', touchAction: 'none' }}
-                title="Drag to reorder"
-              >
-                <GripVertical size={12} />
-              </button>
-            )
+            <button
+              {...listeners}
+              {...attributes}
+              className="icon-btn ghost"
+              style={{ cursor: 'grab', touchAction: 'none' }}
+              title="Drag to reorder"
+            >
+              <GripVertical size={12} />
+            </button>
           )}
           <button className="icon-btn ghost" title="Edit class" onClick={onEdit}>
             <Pencil size={12} />
@@ -142,6 +198,7 @@ export default function School() {
   const [studyAssignment, setStudyAssignment] = useState(null)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState(null)
 
+  const [classesExpanded, setClassesExpanded] = useState(false)
   const [sortMode, setSortMode] = useState('period')
   const [editingOrder, setEditingOrder] = useState(false)
   const [classOrder, setClassOrder] = useState(() => {
@@ -314,77 +371,131 @@ export default function School() {
           <>
             {view === 'byclass' && (
               <div>
-                {/* Sort toolbar */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 500 }}>Sort:</span>
-                  <select
-                    value={sortMode}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setSortMode(val)
-                      setEditingOrder(val === 'custom')
-                    }}
+                {/* Mobile collapsible class section header */}
+                {isMobile ? (
+                  <button
+                    onClick={() => setClassesExpanded((v) => !v)}
                     style={{
-                      fontSize: 11, padding: '3px 8px', borderRadius: 6,
-                      border: '1px solid var(--border)', background: 'var(--bg-2)',
-                      color: 'var(--fg)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                      background: 'none', border: 'none', padding: '0 0 10px', cursor: 'pointer',
                     }}
                   >
-                    <option value="period">By Period</option>
-                    <option value="alpha">A–Z</option>
-                    <option value="custom">Custom Order</option>
-                  </select>
-                  {sortMode === 'custom' && editingOrder && (
-                    <>
-                      <span style={{ fontSize: 10, color: 'var(--fg-4)' }}>
-                        {isMobile ? 'Use arrows to reorder' : 'Drag cards to reorder'}
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      transform: classesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                      transition: 'transform .2s', fontSize: 14, color: 'var(--fg-3)',
+                    }}>▾</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>
+                      {classes.length} Class{classes.length !== 1 ? 'es' : ''}
+                    </span>
+                    {!classesExpanded && (
+                      <span style={{ fontSize: 11, color: 'var(--fg-4)', fontWeight: 400 }}>
+                        — tap to expand
                       </span>
-                      <button
-                        onClick={() => setEditingOrder(false)}
-                        className="btn-ghost"
-                        style={{ fontSize: 11, padding: '3px 10px', height: 'auto' }}
-                      >
-                        Done
-                      </button>
-                    </>
-                  )}
-                  {sortMode === 'custom' && !editingOrder && (
-                    <button
-                      onClick={() => setEditingOrder(true)}
-                      className="btn-ghost"
-                      style={{ fontSize: 11, padding: '3px 8px', height: 'auto' }}
+                    )}
+                  </button>
+                ) : (
+                  /* Desktop sort toolbar */
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 500 }}>Sort:</span>
+                    <select
+                      value={sortMode}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setSortMode(val)
+                        setEditingOrder(val === 'custom')
+                      }}
+                      style={{
+                        fontSize: 11, padding: '3px 8px', borderRadius: 6,
+                        border: '1px solid var(--border)', background: 'var(--bg-2)',
+                        color: 'var(--fg)', cursor: 'pointer',
+                      }}
                     >
-                      Edit order
-                    </button>
-                  )}
-                </div>
+                      <option value="period">By Period</option>
+                      <option value="alpha">A–Z</option>
+                      <option value="custom">Custom Order</option>
+                    </select>
+                    {sortMode === 'custom' && editingOrder && (
+                      <>
+                        <span style={{ fontSize: 10, color: 'var(--fg-4)' }}>Drag cards to reorder</span>
+                        <button onClick={() => setEditingOrder(false)} className="btn-ghost"
+                          style={{ fontSize: 11, padding: '3px 10px', height: 'auto' }}>
+                          Done
+                        </button>
+                      </>
+                    )}
+                    {sortMode === 'custom' && !editingOrder && (
+                      <button onClick={() => setEditingOrder(true)} className="btn-ghost"
+                        style={{ fontSize: 11, padding: '3px 8px', height: 'auto' }}>
+                        Edit order
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext items={sortedClasses.map((c) => c.id)} strategy={rectSortingStrategy}>
-                    <div className="class-grid">
-                      {sortedClasses.map((cls, idx) => (
-                        <SortableClassCard
-                          key={cls.id}
-                          cls={cls}
-                          editingOrder={editingOrder}
-                          isMobile={isMobile}
-                          isFirst={idx === 0}
-                          isLast={idx === sortedClasses.length - 1}
-                          onMoveUp={() => moveCard(cls.id, -1)}
-                          onMoveDown={() => moveCard(cls.id, 1)}
-                          assignments={assignments}
-                          onEdit={(e) => { e.stopPropagation(); setEditClass(cls); setClassModalOpen(true) }}
-                          onDelete={(e) => { e.stopPropagation(); setDeleteClassConfirm(cls) }}
-                          onAddAssignment={() => openNewAssignment(cls.id)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                {/* Sort controls when class grid is expanded on mobile */}
+                {isMobile && classesExpanded && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <select
+                      value={sortMode}
+                      onChange={(e) => { setSortMode(e.target.value); setEditingOrder(e.target.value === 'custom') }}
+                      style={{
+                        fontSize: 11, padding: '3px 8px', borderRadius: 6,
+                        border: '1px solid var(--border)', background: 'var(--bg-2)',
+                        color: 'var(--fg)', cursor: 'pointer',
+                      }}
+                    >
+                      <option value="period">By Period</option>
+                      <option value="alpha">A–Z</option>
+                      <option value="custom">Custom Order</option>
+                    </select>
+                    {sortMode === 'custom' && editingOrder && (
+                      <>
+                        <span style={{ fontSize: 10, color: 'var(--fg-4)' }}>Use arrows to reorder</span>
+                        <button onClick={() => setEditingOrder(false)} className="btn-ghost"
+                          style={{ fontSize: 11, padding: '3px 10px', height: 'auto', minHeight: 'auto' }}>
+                          Done
+                        </button>
+                      </>
+                    )}
+                    {sortMode === 'custom' && !editingOrder && (
+                      <button onClick={() => setEditingOrder(true)} className="btn-ghost"
+                        style={{ fontSize: 11, padding: '3px 8px', height: 'auto', minHeight: 'auto' }}>
+                        Edit order
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Class grid — always visible on desktop, collapsible on mobile */}
+                {(!isMobile || classesExpanded) && (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext items={sortedClasses.map((c) => c.id)} strategy={rectSortingStrategy}>
+                      <div className="class-grid">
+                        {sortedClasses.map((cls, idx) => (
+                          <SortableClassCard
+                            key={cls.id}
+                            cls={cls}
+                            editingOrder={editingOrder}
+                            isMobile={isMobile}
+                            isFirst={idx === 0}
+                            isLast={idx === sortedClasses.length - 1}
+                            onMoveUp={() => moveCard(cls.id, -1)}
+                            onMoveDown={() => moveCard(cls.id, 1)}
+                            assignments={assignments}
+                            onEdit={(e) => { e.stopPropagation(); setEditClass(cls); setClassModalOpen(true) }}
+                            onDelete={(e) => { e.stopPropagation(); setDeleteClassConfirm(cls) }}
+                            onAddAssignment={() => openNewAssignment(cls.id)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )}
 
                 {sortedAssignments.length > 0 && (
                   <div className="group-head" style={{ marginBottom: 16, marginTop: 28 }}>

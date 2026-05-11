@@ -1153,13 +1153,13 @@ input, textarea, button { font-family: inherit; color: inherit; }
 /* ── Page-level adjustments inside mob-content ──────────── */
 /* Give pages inside the mobile layout comfortable thumb spacing */
 .mob-content .page {
-  padding: 20px 16px 80px;
+  padding: 20px 16px calc(80px + env(safe-area-inset-bottom, 0px));
 }
 .mob-content .page-head h1 {
   font-size: 24px;
 }
 .mob-content .watch-content {
-  padding: 16px 16px 80px;
+  padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Larger tap targets for all interactive rows in mobile layout */
@@ -1188,7 +1188,20 @@ input, textarea, button { font-family: inherit; color: inherit; }
 
 /* School page — assignment list needs bottom breathing room */
 .mob-content .assignments-list {
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Compact 2-column class grid on mobile */
+.mob-content .class-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Compact class cards — reset min-height on icon buttons so they don't blow up */
+.mob-content .class-grid .icon-btn {
+  min-height: auto;
+  min-width: auto;
 }
 
 /* Floating task/assignment action menus — must clear the tab bar */
