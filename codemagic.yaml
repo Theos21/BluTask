@@ -163,8 +163,8 @@ workflows:
 
       - name: Set build number
         script: |
-          # Unix timestamp — always strictly increasing, unaffected by clone depth.
-          BUILD_NUMBER=$(date +%s)
+          git fetch --unshallow 2>/dev/null || true
+          BUILD_NUMBER=$(git rev-list --count HEAD)
           echo "Build number: $BUILD_NUMBER"
           cd ios/App
           xcrun agvtool new-version -all "$BUILD_NUMBER"
