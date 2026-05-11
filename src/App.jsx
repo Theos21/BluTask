@@ -193,8 +193,12 @@ export default function App() {
       // Also handle code in hash fragment (some Supabase versions use #code=)
       const code = queryParams.get('code') || hashParams.get('code')
       if (code) {
-        console.log('[OAuth] PKCE flow — calling exchangeCodeForSession()')
-        const { data, error } = await supabase.auth.exchangeCodeForSession(url)
+        // exchangeCodeForSession passes its argument directly as `auth_code` in the
+        // POST body — it does NOT parse URLs. Passing the full custom-scheme URL
+        // causes Supabase to send "com.blutask.app://..." as the auth_code and
+        // Apple rejects it. Always pass the decoded code string.
+        console.log('[OAuth] PKCE flow — exchangeCodeForSession, code length:', code.length)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           console.log('[OAuth] exchangeCodeForSession failed:', error.message)
           dispatchOAuthError(error.message)
@@ -213,21 +217,25 @@ export default function App() {
       try {
         const { App: CapApp } = await import('@capacitor/app')
 
-        // Cold-start: app was launched via the URL scheme after being killed
-        // getLaunchUrl() returns null when there is no launch URL
+        // Cold-start: app was launched via the URL scheme after being killed.
+        // getLaunchUrl() returns null when there is no launch URL.
         const launchResult = await CapApp.getLaunchUrl()
         console.log('[OAuth] getLaunchUrl result:', launchResult)
-        const launchUrl = launchResult?.url ?? null
-        if (launchUrl) {
-          console.log('[OAuth] Cold-start launch URL:', launchUrl)
-          await processOAuthUrl(launchUrl)
+        const coldStartUrl = launchResult?.url ?? null
+        if (coldStartUrl) {
+          console.log('[OAuth] Cold-start launch URL:', coldStartUrl)
+          await processOAuthUrl(coldStartUrl)
         }
 
-        // Warm-start: app was foregrounded via the URL scheme
+        // Warm-start: app was foregrounded via the URL scheme.
+        // On cold start Capacitor queues the appUrlOpen event and delivers it once
+        // the listener is registered — which would process the same URL a second time
+        // and cause Apple to reject the one-time-use authorization code.
+        // Guard: skip any URL that was already handled via getLaunchUrl above.
         const handle = await CapApp.addListener('appUrlOpen', (data) => {
           console.log('[OAuth] appUrlOpen data:', data)
           const url = data?.url ?? null
-          if (url) processOAuthUrl(url)
+          if (url && url !== coldStartUrl) processOAuthUrl(url)
         })
         removeListener = () => handle.remove()
         console.log('[OAuth] URL listener registered')
