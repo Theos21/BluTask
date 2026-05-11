@@ -8,6 +8,7 @@ import { Capacitor } from '@capacitor/core'
 import { initPushNotifications, savePushToken } from './services/notifications'
 import {
   getPermissionStatus,
+  requestPermission,
   rescheduleAll,
   addLocalNotificationListener,
 } from './services/localNotifications'
@@ -31,6 +32,9 @@ import Onboarding from './pages/Onboarding'
 import ResetPassword from './pages/ResetPassword'
 import SharedWatchlist from './pages/Watch/SharedWatchlist'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import Sports from './pages/Sports'
+import Gym from './pages/Gym'
+import Books from './pages/Books'
 
 // Called after any successful OAuth code/token exchange so the auth store
 // stays in sync even if the Supabase onAuthStateChange event fires before
@@ -115,8 +119,16 @@ export default function App() {
     let removeListener = () => {}
 
     async function setupLocalNotifications() {
-      const status = await getPermissionStatus()
-      if (status !== 'granted') return  // don't prompt on launch — user enables via Settings
+      let status = await getPermissionStatus()
+
+      // Request permission at first launch if the OS hasn't asked yet.
+      // On iOS the system dialog appears once; subsequent launches skip this branch.
+      if (status === 'prompt') {
+        const granted = await requestPermission()
+        status = granted ? 'granted' : await getPermissionStatus()
+      }
+
+      if (status !== 'granted') return
 
       // Re-sync all scheduled notifications against current DB state
       const [{ data: tasks }, { data: assignments }, { data: prefs }] = await Promise.all([
@@ -391,6 +403,9 @@ export default function App() {
           <Route path="watch" element={<Watch />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="sports" element={<Sports />} />
+          <Route path="gym" element={<Gym />} />
+          <Route path="books" element={<Books />} />
           <Route path="settings" element={<Settings />} />
           <Route path="archive" element={<Archive />} />
         </Route>

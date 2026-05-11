@@ -534,9 +534,16 @@ export default function Tasks() {
         </div>
 
         {/* Manage sheet — lists, folders, tags (web + mobile) */}
-        {manageSheetOpen && (
-          <div className="fixed inset-0 z-50 flex items-end" onClick={e => { if (e.target === e.currentTarget) { setManageSheetOpen(false); setMobileRenaming(null) } }}>
-            <div className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 flex flex-col max-h-[75vh]">
+        {manageSheetOpen && createPortal(
+          <div
+            className="fixed inset-0 flex items-end bg-black/40"
+            style={{ zIndex: 400 }}
+            onClick={e => { if (e.target === e.currentTarget) { setManageSheetOpen(false); setMobileRenaming(null) } }}
+          >
+            <div
+              className="w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl border-t border-gray-100 dark:border-gray-800 flex flex-col max-h-[75vh]"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            >
               <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                 <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
               </div>
@@ -679,7 +686,8 @@ export default function Tasks() {
                 )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Top bar */}

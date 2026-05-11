@@ -21,46 +21,46 @@ function Toggle({ enabled, onToggle, disabled }) {
   )
 }
 
+function useToggle(profile, key, defaultVal) {
+  const { patchProfile, updateProfile } = useAuthStore()
+  const [value, setValue] = useState(profile?.[key] ?? defaultVal)
+
+  useEffect(() => {
+    if (profile != null) setValue(profile[key] ?? defaultVal)
+  }, [profile?.[key]])
+
+  async function toggle() {
+    const next = !value
+    setValue(next)
+    patchProfile({ [key]: next })
+    const { error } = await updateProfile({ [key]: next })
+    if (error) {
+      setValue(!next)
+      patchProfile({ [key]: !next })
+      showToast({ message: 'Failed to save', variant: 'error' })
+    } else {
+      showToast({ message: 'Changes saved', variant: 'success' })
+    }
+  }
+
+  return [value, toggle]
+}
+
 export default function SpacesSection() {
-  const { profile, patchProfile, updateProfile } = useAuthStore()
-  const [showSchool, setShowSchool] = useState(profile?.show_school ?? true)
-  const [showWatch, setShowWatch] = useState(profile?.show_watch ?? true)
+  const { profile } = useAuthStore()
+  const [showSchool, toggleSchool] = useToggle(profile, 'show_school', true)
+  const [showWatch,  toggleWatch]  = useToggle(profile, 'show_watch',  true)
+  const [showSports, toggleSports] = useToggle(profile, 'show_sports', false)
+  const [showGym,    toggleGym]    = useToggle(profile, 'show_gym',    false)
+  const [showBooks,  toggleBooks]  = useToggle(profile, 'show_books',  false)
 
-  useEffect(() => {
-    if (profile != null) setShowSchool(profile.show_school ?? true)
-  }, [profile?.show_school])
-
-  useEffect(() => {
-    if (profile != null) setShowWatch(profile.show_watch ?? true)
-  }, [profile?.show_watch])
-
-  async function toggleSchool() {
-    const newValue = !showSchool
-    setShowSchool(newValue)
-    patchProfile({ show_school: newValue })
-    const { error } = await updateProfile({ show_school: newValue })
-    if (error) {
-      setShowSchool(!newValue)
-      patchProfile({ show_school: !newValue })
-      showToast({ message: 'Failed to save', variant: 'error' })
-    } else {
-      showToast({ message: 'Changes saved', variant: 'success' })
-    }
-  }
-
-  async function toggleWatch() {
-    const newValue = !showWatch
-    setShowWatch(newValue)
-    patchProfile({ show_watch: newValue })
-    const { error } = await updateProfile({ show_watch: newValue })
-    if (error) {
-      setShowWatch(!newValue)
-      patchProfile({ show_watch: !newValue })
-      showToast({ message: 'Failed to save', variant: 'error' })
-    } else {
-      showToast({ message: 'Changes saved', variant: 'success' })
-    }
-  }
+  const rows = [
+    { key: 'school', label: 'School', desc: 'Track classes and assignments',  value: showSchool, toggle: toggleSchool },
+    { key: 'watch',  label: 'Watch',  desc: 'Track shows and movies',          value: showWatch,  toggle: toggleWatch },
+    { key: 'sports', label: 'Sports', desc: 'Log sessions, drills and gear',   value: showSports, toggle: toggleSports },
+    { key: 'gym',    label: 'Gym',    desc: 'Workouts, sets and PR tracking',  value: showGym,    toggle: toggleGym },
+    { key: 'books',  label: 'Books',  desc: 'Reading tracker and book notes',  value: showBooks,  toggle: toggleBooks },
+  ]
 
   return (
     <div className="space-y-6">
@@ -70,23 +70,15 @@ export default function SpacesSection() {
       </div>
 
       <div className="space-y-0">
-        {/* School */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
-          <div>
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">School</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Track classes and assignments</p>
+        {rows.map(({ key, label, desc, value, toggle }, i) => (
+          <div key={key} className={`flex items-center justify-between py-4 ${i < rows.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+            <div>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{desc}</p>
+            </div>
+            <Toggle enabled={value} onToggle={toggle} />
           </div>
-          <Toggle enabled={showSchool} onToggle={toggleSchool} />
-        </div>
-
-        {/* Watch */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
-          <div>
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Watch</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Track shows and movies</p>
-          </div>
-          <Toggle enabled={showWatch} onToggle={toggleWatch} />
-        </div>
+        ))}
       </div>
     </div>
   )

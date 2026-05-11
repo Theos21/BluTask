@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, GraduationCap, CheckSquare, Tv, Calendar,
   Archive, Settings, LogOut, Sun, Moon, ChevronRight,
+  Dumbbell, BookOpen, Trophy,
 } from 'lucide-react'
 import { isToday, isPast } from 'date-fns'
 import { useAppStore } from '../../stores/useAppStore'
@@ -39,6 +40,9 @@ function useTabs() {
   const { profile } = useAuthStore()
   const showSchool = profile?.show_school ?? true
   const showWatch  = profile?.show_watch  ?? true
+  const showSports = profile?.show_sports ?? false
+  const showGym    = profile?.show_gym    ?? false
+  const showBooks  = profile?.show_books  ?? false
 
   return [
     { path: '/home',          label: 'Home',     Icon: Home },
@@ -46,6 +50,9 @@ function useTabs() {
     { path: '/home/tasks',    label: 'Tasks',    Icon: CheckSquare },
     showWatch  && { path: '/home/watch',    label: 'Watch',    Icon: Tv },
     { path: '/home/calendar', label: 'Calendar', Icon: Calendar },
+    showSports && { path: '/home/sports',   label: 'Sports',   Icon: Trophy },
+    showGym    && { path: '/home/gym',      label: 'Gym',      Icon: Dumbbell },
+    showBooks  && { path: '/home/books',    label: 'Books',    Icon: BookOpen },
   ].filter(Boolean)
 }
 

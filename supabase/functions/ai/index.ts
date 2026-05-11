@@ -53,13 +53,20 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'parse_tasks': {
-        const text = await callClaude(
+        const raw = await callClaude(
           apiKey,
           `You are a task list parser. Today is ${payload.today}. Extract all individual tasks from the text. Return a JSON array where each element has: title (string), due_date (ISO 8601 string if detectable, otherwise null), priority (one of: normal/important/urgent, default normal). Return ONLY valid JSON array, no markdown fences, no explanation.`,
           payload.text,
           2048,
         )
-        return json({ tasks: JSON.parse(text) })
+        let tasks: unknown[]
+        try {
+          tasks = JSON.parse(raw)
+        } catch {
+          console.error('parse_tasks: JSON.parse failed, raw output:', raw.slice(0, 300))
+          return json({ error: 'AI returned non-JSON output for parse_tasks', detail: raw.slice(0, 300) }, 502)
+        }
+        return json({ tasks })
       }
 
       case 'parse_task': {

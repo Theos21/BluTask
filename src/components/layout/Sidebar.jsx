@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Home, GraduationCap, Tv, CheckSquare, Calendar,
   Archive, Settings, Sun, Moon, LogOut, X, Search,
-  Plus, Inbox, Star, Clock,
+  Plus, Inbox, Star, Clock, Dumbbell, BookOpen, Trophy,
 } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import { isToday, isPast, addDays, startOfDay } from 'date-fns'
@@ -19,6 +19,9 @@ const SPACE_COLORS = {
   '/home/tasks':    { hue: 150, dot: 'oklch(0.72 0.14 150)' },
   '/home/watch':    { hue: 350, dot: 'oklch(0.7 0.14 350)' },
   '/home/calendar': { hue: 65,  dot: 'oklch(0.74 0.14 65)' },
+  '/home/sports':   { hue: 25,  dot: 'oklch(0.72 0.16 25)' },
+  '/home/gym':      { hue: 320, dot: 'oklch(0.72 0.14 320)' },
+  '/home/books':    { hue: 200, dot: 'oklch(0.72 0.12 200)' },
   '/home/archive':  { hue: 250, dot: 'oklch(0.55 0.04 250)' },
   '/home/settings': { hue: 250, dot: 'oklch(0.65 0.02 250)' },
 }
@@ -71,8 +74,11 @@ export default function AppSidebar({ onClose }) {
   const { folders } = useFolderStore()
   const badges = useBadges()
 
-  const showSchool = profile?.show_school ?? true
-  const showWatch = profile?.show_watch ?? true
+  const showSchool  = profile?.show_school  ?? true
+  const showWatch   = profile?.show_watch   ?? true
+  const showSports  = profile?.show_sports  ?? false
+  const showGym     = profile?.show_gym     ?? false
+  const showBooks   = profile?.show_books   ?? false
 
   function openCommandPalette() {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
@@ -104,11 +110,14 @@ export default function AppSidebar({ onClose }) {
   }).length
 
   const SPACES = [
-    { path: '/home', label: 'Home', badge: null },
-    showSchool && { path: '/home/school', label: 'School', badge: badges.school || null },
-    { path: '/home/tasks', label: 'Tasks', badge: badges.tasks || null },
-    showWatch && { path: '/home/watch', label: 'Watch', badge: null },
+    { path: '/home',          label: 'Home',     badge: null },
+    showSchool && { path: '/home/school',   label: 'School',   badge: badges.school || null },
+    { path: '/home/tasks',    label: 'Tasks',    badge: badges.tasks || null },
+    showWatch  && { path: '/home/watch',    label: 'Watch',    badge: null },
     { path: '/home/calendar', label: 'Calendar', badge: null },
+    showSports && { path: '/home/sports',   label: 'Sports',   badge: null },
+    showGym    && { path: '/home/gym',      label: 'Gym',      badge: null },
+    showBooks  && { path: '/home/books',    label: 'Books',    badge: null },
   ].filter(Boolean)
 
   const QUICK = [

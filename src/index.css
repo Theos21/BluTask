@@ -917,17 +917,22 @@ input, textarea, button { font-family: inherit; color: inherit; }
   border-top: 1px solid var(--border);
   /* grow into the home-indicator area on notched iPhones */
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* horizontal scroll when there are many tabs */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.mob-tab-bar::-webkit-scrollbar { display: none; }
 
 .mob-tab {
-  flex: 1;
+  flex: 0 0 64px;               /* fixed width — tabs don't squash when there are many */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
   min-height: 54px;             /* Apple HIG: 44px minimum tap target */
-  padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px)) 4px;
+  padding: 8px 4px 8px 4px;
   border: none;
   background: none;
   cursor: pointer;
@@ -936,8 +941,6 @@ input, textarea, button { font-family: inherit; color: inherit; }
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
-/* override the padding-bottom double-counting; let tab-bar handle it */
-.mob-tab { padding-bottom: 8px; }
 
 .mob-tab.active { color: var(--accent); }
 
