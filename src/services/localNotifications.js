@@ -181,16 +181,34 @@ export async function requestPermission() {
 
 export async function sendTestNotification() {
   if (!IS_NATIVE) return { ok: false, reason: 'Not running as a native app' }
-  try {
-    await scheduleNotifs([
-      oneShot(TEST_ID, 'BluTask notifications work! ✓',
-        'Your notification setup is working correctly.', Date.now() + 5_000),
-    ])
+
+  async function _attempt() {
+    // Check permission first — schedule() hangs silently when not granted on iOS
+    const status = await getPermissionStatus()
+    if (status === 'denied') return { ok: false, reason: 'Notifications are blocked. Go to iOS Settings → BluTask → Notifications and enable them.' }
+    if (status === 'error')  return { ok: false, reason: 'Could not check notification permission. Try restarting the app.' }
+
+    const LN = await getPlugin()
+    if (IS_ANDROID) await ensureAndroidChannels(LN)
+    await withTimeout(
+      LN.schedule({ notifications: [oneShot(TEST_ID, 'BluTask notifications work! ✓', 'Your notification setup is working correctly.', Date.now() + 5_000)] }),
+      8000, 'schedule-test'
+    )
     console.log(TAG, 'Test notification scheduled — fires in 5 s')
     return { ok: true }
+  }
+
+  try {
+    return await withTimeout(_attempt(), 12_000, 'sendTestNotification')
   } catch (err) {
     console.error(TAG, 'sendTestNotification failed:', err.message)
-    return { ok: false, reason: err.message }
+    const isTimeout = err.message?.includes('Timed out')
+    return {
+      ok: false,
+      reason: isTimeout
+        ? 'Request timed out. Make sure notifications are enabled in iOS Settings → BluTask.'
+        : err.message,
+    }
   }
 }
 

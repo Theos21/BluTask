@@ -51,7 +51,16 @@ function TestNotificationRow() {
   async function handleTest() {
     setState('sending')
     setMsg('')
-    const { ok, reason } = await sendTestNotification()
+    const UI_TIMEOUT_MS = 15_000
+    const { ok, reason } = await Promise.race([
+      sendTestNotification(),
+      new Promise((resolve) =>
+        setTimeout(
+          () => resolve({ ok: false, reason: 'Request timed out. Make sure notifications are enabled in iOS Settings → BluTask.' }),
+          UI_TIMEOUT_MS
+        )
+      ),
+    ])
     if (ok) {
       setState('sent')
       setMsg('A test notification will arrive in ~5 seconds. Background the app first.')
