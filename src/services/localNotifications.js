@@ -1,14 +1,19 @@
 /**
  * localNotifications.js
  *
- * Uses @capacitor/local-notifications (SPM plugin, auto-registered at boot).
- * Works on iOS and Android. Web: no-op.
+ * Schedules local notifications via BluTaskNotificationsPlugin — a minimal
+ * custom Capacitor plugin in ios/App/App/BluTaskNotificationsPlugin.swift.
+ * This bypasses @capacitor/local-notifications which was hanging on iOS.
+ *
+ * Android still uses @capacitor/local-notifications because our custom plugin
+ * is iOS-only (no Android implementation registered).
  */
 
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 
 const IS_NATIVE  = Capacitor.isNativePlatform()
 const IS_ANDROID = Capacitor.getPlatform() === 'android'
+const IS_IOS     = Capacitor.getPlatform() === 'ios'
 const TAG        = '[LocalNotif]'
 
 // ── Prefs cache ───────────────────────────────────────────────────────────────
@@ -26,21 +31,40 @@ export function getPrefsCache()         { return { ..._prefs } }
 
 // ── Plugin loader ─────────────────────────────────────────────────────────────
 
-let _plugin = null
+// Custom iOS plugin — registered explicitly in BluTaskBridgeViewController.
+const _iosPlugin = IS_IOS
+  ? registerPlugin('BluTaskNotifications', {
+      web: () => ({
+        checkPermissions:  async () => ({ display: 'prompt' }),
+        requestPermissions: async () => ({ display: 'denied' }),
+        schedule:          async () => ({ notifications: [] }),
+        getPending:        async () => ({ notifications: [] }),
+        cancel:            async () => {},
+      }),
+    })
+  : null
 
-async function getPlugin() {
-  if (_plugin) {
-    if (_plugin.error) throw _plugin.error
-    return _plugin.plugin
+let _androidPlugin = null
+
+async function getAndroidPlugin() {
+  if (_androidPlugin) {
+    if (_androidPlugin.error) throw _androidPlugin.error
+    return _androidPlugin.plugin
   }
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
-    _plugin = { plugin: LocalNotifications }
+    _androidPlugin = { plugin: LocalNotifications }
     return LocalNotifications
   } catch (err) {
-    _plugin = { error: err }
+    _androidPlugin = { error: err }
     throw err
   }
+}
+
+async function getPlugin() {
+  if (IS_IOS)     return _iosPlugin
+  if (IS_ANDROID) return getAndroidPlugin()
+  return null
 }
 
 // ── Timeout guard ─────────────────────────────────────────────────────────────
@@ -73,14 +97,21 @@ const CH_SUMMARY   = 'blutask-summary'
 // ── Notification builders ─────────────────────────────────────────────────────
 
 function oneShot(id, title, body, scheduledAt) {
-  const n = { id, title, body, schedule: { at: new Date(scheduledAt), allowWhileIdle: true } }
-  if (IS_ANDROID) n.channelId = CH_REMINDERS
+  const n = { id, title, body, schedule: { at: new Date(scheduledAt) } }
+  // allowWhileIdle is Android-only — don't set it on iOS
+  if (IS_ANDROID) {
+    n.schedule.allowWhileIdle = true
+    n.channelId = CH_REMINDERS
+  }
   return n
 }
 
 function daily(id, title, body, hour) {
-  const n = { id, title, body, schedule: { on: { hour, minute: 0 }, repeats: true, allowWhileIdle: true } }
-  if (IS_ANDROID) n.channelId = CH_SUMMARY
+  const n = { id, title, body, schedule: { on: { hour, minute: 0 }, repeats: true } }
+  if (IS_ANDROID) {
+    n.schedule.allowWhileIdle = true
+    n.channelId = CH_SUMMARY
+  }
   return n
 }
 
@@ -88,19 +119,28 @@ function daily(id, title, body, hour) {
 
 async function scheduleNotifs(notifications) {
   const LN = await getPlugin()
+  if (!LN) return
   if (IS_ANDROID) await ensureAndroidChannels(LN)
-  await withTimeout(LN.schedule({ notifications }), 8000, 'schedule')
+  // iOS uses custom plugin — no timeout wrapper needed (DispatchGroup resolves promptly)
+  // Android keeps the 8s timeout as before
+  if (IS_ANDROID) {
+    await withTimeout(LN.schedule({ notifications }), 8000, 'schedule')
+  } else {
+    await LN.schedule({ notifications })
+  }
 }
 
 async function cancelByIds(ids) {
   if (!ids.length) return
   const LN = await getPlugin()
+  if (!LN) return
   await LN.cancel({ notifications: ids.map((id) => ({ id })) })
 }
 
 async function getPendingIds() {
   try {
     const LN = await getPlugin()
+    if (!LN) return []
     const { notifications: pending } = await withTimeout(LN.getPending(), 4000, 'getPending')
     return (pending ?? []).map((n) => n.id)
   } catch { return [] }
@@ -138,13 +178,11 @@ async function ensureAndroidChannels(LN) {
 // PERMISSION
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Returns 'granted' | 'denied' | 'prompt' | 'error'
- */
 export async function getPermissionStatus() {
   if (!IS_NATIVE) return 'prompt'
   try {
     const LN = await getPlugin()
+    if (!LN) return 'error'
     const { display } = await withTimeout(LN.checkPermissions(), 5000, 'checkPermissions')
     console.log(TAG, 'permission:', display)
     return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt'
@@ -154,15 +192,11 @@ export async function getPermissionStatus() {
   }
 }
 
-/**
- * Shows the OS permission dialog.
- * On iOS, permission is requested by AppDelegate at launch — this is a fallback.
- * Returns 'granted' | 'denied' | 'error'
- */
 export async function requestPermission() {
   if (!IS_NATIVE) return 'error'
   try {
     const LN = await getPlugin()
+    if (!LN) return 'error'
     const { display } = await withTimeout(LN.requestPermissions(), 60_000, 'requestPermissions')
     return display === 'granted' ? 'granted' : 'denied'
   } catch (err) {
@@ -186,23 +220,28 @@ export async function sendTestNotification() {
     if (status === 'error') {
       return { ok: false, reason: 'Could not check notification permission. Try restarting the app.' }
     }
-    await scheduleNotifs([
-      oneShot(TEST_ID, 'BluTask notifications work! ✓',
-        'Your notification setup is working correctly.', Date.now() + 5_000),
-    ])
+    try {
+      await scheduleNotifs([
+        oneShot(TEST_ID, 'BluTask notifications work! ✓',
+          'Your notification setup is working correctly.', Date.now() + 5_000),
+      ])
+    } catch (err) {
+      console.error(TAG, 'schedule() error:', err)
+      return { ok: false, reason: `Scheduling failed: ${err?.message ?? String(err)}` }
+    }
     console.log(TAG, 'Test notification scheduled — fires in 5 s')
     return { ok: true }
   }
 
   try {
-    return await withTimeout(_attempt(), 12_000, 'sendTestNotification')
+    return await withTimeout(_attempt(), 20_000, 'sendTestNotification')
   } catch (err) {
     console.error(TAG, 'sendTestNotification failed:', err.message)
     const isTimeout = err.message?.includes('Timed out')
     return {
       ok: false,
       reason: isTimeout
-        ? 'Request timed out. Make sure notifications are enabled in iOS Settings → BluTask.'
+        ? 'Request timed out after 20 s. Make sure notifications are enabled in iOS Settings → BluTask.'
         : err.message,
     }
   }
@@ -362,7 +401,7 @@ export async function requestExactAlarmPermission() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FOREGROUND LISTENER (Android only — iOS handled by AppDelegate willPresent)
+// FOREGROUND LISTENER (Android only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function addLocalNotificationListener(handler) {
@@ -376,7 +415,7 @@ export async function addLocalNotificationListener(handler) {
   }
 }
 
-export function resetPluginCache() { _plugin = null }
+export function resetPluginCache() { _androidPlugin = null }
 
 // Legacy aliases
 export const requestWebPermission    = requestPermission
