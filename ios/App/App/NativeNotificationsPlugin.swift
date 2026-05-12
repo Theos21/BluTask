@@ -26,16 +26,13 @@ public class NativeNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
         center.getNotificationSettings { settings in
             let status: String
             switch settings.authorizationStatus {
-            case .authorized, .provisional, .ephemeral:
-                status = "granted"
-            case .denied:
-                status = "denied"
-            case .notDetermined:
-                status = "prompt"
-            @unknown default:
-                status = "prompt"
+            case .authorized, .provisional, .ephemeral: status = "granted"
+            case .denied:                                status = "denied"
+            case .notDetermined:                         status = "prompt"
+            @unknown default:                            status = "prompt"
             }
-            call.resolve(["status": status])
+            // resolve() calls evaluateJavaScript on WKWebView — must be on main thread
+            DispatchQueue.main.async { call.resolve(["status": status]) }
         }
     }
 
@@ -45,11 +42,10 @@ public class NativeNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Returns { granted: Bool }
     @objc func requestPermission(_ call: CAPPluginCall) {
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                call.reject(error.localizedDescription)
-                return
+            DispatchQueue.main.async {
+                if let error = error { call.reject(error.localizedDescription); return }
+                call.resolve(["granted": granted])
             }
-            call.resolve(["granted": granted])
         }
     }
 
@@ -147,7 +143,8 @@ public class NativeNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Returns { ids: [String] }
     @objc func getPending(_ call: CAPPluginCall) {
         center.getPendingNotificationRequests { requests in
-            call.resolve(["ids": requests.map { $0.identifier }])
+            let ids = requests.map { $0.identifier }
+            DispatchQueue.main.async { call.resolve(["ids": ids]) }
         }
     }
 }

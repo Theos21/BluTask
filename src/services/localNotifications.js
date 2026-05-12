@@ -163,23 +163,46 @@ async function ensureAndroidChannels(LN) {
 
 /**
  * Returns 'granted' | 'denied' | 'prompt' | 'error'
+ *
+ * iOS: tries NativeNotificationsPlugin first (compiled into binary).
+ *      Falls back to @capacitor/local-notifications if the plugin isn't
+ *      registered yet (e.g. BluTaskBridgeViewController not loaded).
  */
 export async function getPermissionStatus() {
   if (!IS_NATIVE) return 'prompt'
-  try {
-    if (IS_IOS) {
+
+  if (IS_IOS) {
+    // Primary: NativeNotificationsPlugin — direct UNUserNotificationCenter call
+    try {
       const { status } = await withTimeout(
-        NativeNotif.checkPermission(), 5000, 'iOS checkPermission'
+        NativeNotif.checkPermission(), 3000, 'iOS checkPermission'
       )
-      console.log(TAG, 'iOS permission status:', status)
+      console.log(TAG, 'iOS permission (NativeNotif):', status)
       return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'prompt'
+    } catch (primaryErr) {
+      console.warn(TAG, 'NativeNotif.checkPermission failed, trying LN fallback:', primaryErr.message)
     }
+
+    // Fallback: @capacitor/local-notifications SPM plugin
+    try {
+      const LN = await getLNPlugin()
+      const { display } = await withTimeout(LN.checkPermissions(), 3000, 'iOS LN checkPermissions')
+      console.log(TAG, 'iOS permission (LN fallback):', display)
+      return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt'
+    } catch (fallbackErr) {
+      console.error(TAG, 'iOS permission check both paths failed:', fallbackErr.message)
+      return 'error'
+    }
+  }
+
+  // Android
+  try {
     const LN = await getLNPlugin()
     const { display } = await withTimeout(LN.checkPermissions(), 5000, 'Android checkPermissions')
-    console.log(TAG, 'Android permission status:', display)
+    console.log(TAG, 'Android permission:', display)
     return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt'
   } catch (err) {
-    console.error(TAG, 'getPermissionStatus error:', err.message)
+    console.error(TAG, 'Android getPermissionStatus error:', err.message)
     return 'error'
   }
 }
