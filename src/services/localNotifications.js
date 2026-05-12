@@ -97,8 +97,11 @@ const CH_SUMMARY   = 'blutask-summary'
 // ── Notification builders ─────────────────────────────────────────────────────
 
 function oneShot(id, title, body, scheduledAt) {
-  const n = { id, title, body, schedule: { at: new Date(scheduledAt) } }
-  // allowWhileIdle is Android-only — don't set it on iOS
+  // Use ISO string, not a Date object. WebKit's postMessage serialises JS Date
+  // objects as NSDate on the Swift side, but our plugin (and @capacitor/
+  // local-notifications) expect a string. toISOString() is always a string.
+  const at = new Date(scheduledAt).toISOString()
+  const n = { id, title, body, schedule: { at } }
   if (IS_ANDROID) {
     n.schedule.allowWhileIdle = true
     n.channelId = CH_REMINDERS
