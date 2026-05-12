@@ -481,6 +481,7 @@ export default function Gym() {
 
   // Stats
   const thisWeekLogs = logs.filter((l) => {
+    if (!l.date) return false
     const d = parseISO(l.date)
     const now = new Date()
     const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay())
@@ -622,7 +623,7 @@ export default function Gym() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold" style={{ color: 'var(--fg)' }}>{log.workout_name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px]" style={{ color: 'var(--fg-3)' }}>{format(parseISO(log.date), 'MMM d, yyyy')}</span>
+                          <span className="text-[10px]" style={{ color: 'var(--fg-3)' }}>{log.date ? format(parseISO(log.date), 'MMM d, yyyy') : '—'}</span>
                           {log.duration_minutes && <span className="text-[10px] flex items-center gap-0.5" style={{ color: 'var(--fg-4)' }}><Clock size={9} />{log.duration_minutes}m</span>}
                           {completedSets.length > 0 && <span className="text-[10px]" style={{ color: 'var(--fg-4)' }}>{completedSets.length} sets</span>}
                         </div>
