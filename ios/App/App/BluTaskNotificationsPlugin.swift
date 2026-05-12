@@ -18,7 +18,7 @@ public class BluTaskNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     // MARK: - Permissions
 
-    @objc func checkPermissions(_ call: CAPPluginCall) {
+    @objc public override func checkPermissions(_ call: CAPPluginCall) {
         center.getNotificationSettings { settings in
             let status: String
             switch settings.authorizationStatus {
@@ -31,7 +31,7 @@ public class BluTaskNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc public override func requestPermissions(_ call: CAPPluginCall) {
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let err = error {
                 call.reject(err.localizedDescription)
