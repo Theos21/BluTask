@@ -390,13 +390,34 @@ export default function Watch() {
       token = crypto.randomUUID()
       await updateProfile({ share_token: token })
     }
+    setGeneratingLink(false)
+
     const shareOrigin = isCapacitor ? 'https://blutask.app' : window.location.origin
     const url = `${shareOrigin}/shared/watch/${token}`
-    await navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    setGeneratingLink(false)
-    showToast({ message: 'Share link copied to clipboard!', variant: 'success' })
+    const ownerFirstName = profile?.display_name || profile?.full_name?.split(' ')[0] || 'My'
+
+    if (isCapacitor) {
+      try {
+        const { Share } = await import('@capacitor/share')
+        await Share.share({
+          title: `${ownerFirstName}'s Watchlist`,
+          text: 'Check out my watchlist on BluTask!',
+          url,
+          dialogTitle: 'Share Watchlist',
+        })
+      } catch {
+        // User cancelled the share sheet — no toast needed
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        showToast({ message: 'Share link copied to clipboard!', variant: 'success' })
+      } catch {
+        showToast({ message: 'Could not copy link. Try again.', variant: 'error' })
+      }
+    }
   }
 
   // Stats

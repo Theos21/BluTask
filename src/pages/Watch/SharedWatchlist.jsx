@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tv2 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 const STATUS_LABEL = {
-  watching: 'Watching',
-  paused: 'Paused',
+  watching:      'Watching',
+  paused:        'Paused',
   want_to_watch: 'Want to watch',
-  finished: 'Finished',
-  dropped: 'Dropped',
+  finished:      'Finished',
+  dropped:       'Dropped',
 }
 
 const STATUS_DOT = {
-  watching: 'bg-green-400',
-  paused: 'bg-yellow-400',
+  watching:      'bg-green-400',
+  paused:        'bg-yellow-400',
   want_to_watch: 'bg-gray-400',
-  finished: 'bg-blue-400',
-  dropped: 'bg-red-400',
+  finished:      'bg-blue-400',
+  dropped:       'bg-red-400',
 }
 
 function getInitials(title) {
@@ -56,30 +58,50 @@ export default function SharedWatchlist() {
   const [ownerName, setOwnerName] = useState('')
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [networkError, setNetworkError] = useState(false)
 
   useEffect(() => {
-    if (!token) return
+    if (!token) { setNotFound(true); setLoading(false); return }
+
     async function load() {
-      // Find profile with this share_token
-      const { data: profile, error: pErr } = await supabase
-        .from('profiles')
-        .select('id, full_name, display_name')
-        .eq('share_token', token)
-        .single()
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/shared-watchlist?token=${encodeURIComponent(token)}`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+          },
+        )
 
-      if (pErr || !profile) { setNotFound(true); setLoading(false); return }
+        if (res.status === 404) {
+          setNotFound(true)
+          setLoading(false)
+          return
+        }
 
-      setOwnerName(profile.display_name || profile.full_name?.split(' ')[0] || 'Someone')
+        if (!res.ok) {
+          setNetworkError(true)
+          setLoading(false)
+          return
+        }
 
-      const { data: showData } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('updated_at', { ascending: false })
+        const data = await res.json()
+        if (data.error) {
+          setNotFound(true)
+          setLoading(false)
+          return
+        }
 
-      setShows(showData || [])
+        setOwnerName(data.ownerName)
+        setShows(data.shows)
+      } catch {
+        setNetworkError(true)
+      }
       setLoading(false)
     }
+
     load()
   }, [token])
 
@@ -87,6 +109,23 @@ export default function SharedWatchlist() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (networkError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+        <div className="text-center space-y-3">
+          <p className="text-gray-700 dark:text-gray-300 font-medium">Couldn't load this watchlist</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Check your connection and try again.</p>
+          <button
+            onClick={() => { setNetworkError(false); setLoading(true) }}
+            className="text-sm text-amber-500 underline"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
@@ -101,9 +140,9 @@ export default function SharedWatchlist() {
     )
   }
 
-  const watching = shows.filter(s => s.status === 'watching' || s.status === 'paused')
+  const watching    = shows.filter(s => s.status === 'watching' || s.status === 'paused')
   const wantToWatch = shows.filter(s => s.status === 'want_to_watch')
-  const finished = shows.filter(s => s.status === 'finished' || s.status === 'dropped')
+  const finished    = shows.filter(s => s.status === 'finished' || s.status === 'dropped')
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4">
@@ -114,7 +153,7 @@ export default function SharedWatchlist() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{ownerName}'s Watchlist</h1>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{shows.length} titles</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{shows.length} title{shows.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import {
 import { useSportsStore } from '../../stores/useSportsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { showToast } from '../../lib/toast'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 // ─── sport configs ────────────────────────────────────────────────────────────
 const SPORT_TYPES = [
@@ -792,6 +793,7 @@ export default function Sports() {
   const [rosterModal,  setRosterModal]  = useState(null)
   const [drillSearch,  setDrillSearch]  = useState('')
   const [drillCat,     setDrillCat]     = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useEffect(() => {
     if (!user) return
@@ -846,12 +848,8 @@ export default function Sports() {
     }
   }
 
-  async function handleDelete(sport) {
-    if (!confirm(`Delete "${sport.name}"? This will also remove all its sessions, drills, gear and roster.`)) return
-    if (activeSportId === sport.id) setActiveSportId(null)
-    const { error } = await deleteSport(sport.id)
-    if (error) showToast({ message: 'Delete failed', variant: 'error' })
-    else showToast({ message: 'Sport deleted', variant: 'success' })
+  function handleDelete(sport) {
+    setDeleteConfirm({ type: 'sport', item: sport })
   }
 
   const DETAIL_TABS = [
@@ -1006,7 +1004,7 @@ export default function Sports() {
                 <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
                   {grouped.upcoming.map((s, i) => (
                     <SessionRow key={s.id} session={s} last={i === grouped.upcoming.length - 1} accentColor={accentColor}
-                      onEdit={() => setSessionModal(s)} onDelete={() => deleteSession(s.id)} onToggle={() => updateSession(s.id, { completed: !s.completed })} />
+                      onEdit={() => setSessionModal(s)} onDelete={() => setDeleteConfirm({ type: 'session', item: s })} onToggle={() => updateSession(s.id, { completed: !s.completed })} />
                   ))}
                 </div>
               </div>
@@ -1017,7 +1015,7 @@ export default function Sports() {
                 <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
                   {grouped.past.map((s, i) => (
                     <SessionRow key={s.id} session={s} last={i === grouped.past.length - 1} accentColor={accentColor}
-                      onEdit={() => setSessionModal(s)} onDelete={() => deleteSession(s.id)} onToggle={() => updateSession(s.id, { completed: !s.completed })} />
+                      onEdit={() => setSessionModal(s)} onDelete={() => setDeleteConfirm({ type: 'session', item: s })} onToggle={() => updateSession(s.id, { completed: !s.completed })} />
                   ))}
                 </div>
               </div>
@@ -1063,7 +1061,7 @@ export default function Sports() {
                 <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
                   {items.map((d, i) => (
                     <DrillCard key={d.id} drill={d} last={i === items.length - 1} accentColor={accentColor}
-                      onEdit={() => setDrillModal(d)} onDelete={() => deleteDrill(d.id)} />
+                      onEdit={() => setDrillModal(d)} onDelete={() => setDeleteConfirm({ type: 'drill', item: d })} />
                   ))}
                 </div>
               </div>
@@ -1099,7 +1097,7 @@ export default function Sports() {
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => setEquipModal(e)} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Edit2 size={12} /></button>
-                        <button onClick={() => deleteEquipment(e.id)} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Trash2 size={12} /></button>
+                        <button onClick={() => setDeleteConfirm({ type: 'equipment', item: e })} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Trash2 size={12} /></button>
                       </div>
                     </div>
                   )
@@ -1135,7 +1133,7 @@ export default function Sports() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button onClick={() => setRosterModal(m)} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Edit2 size={12} /></button>
-                      <button onClick={() => deleteRosterMember(m.id)} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Trash2 size={12} /></button>
+                      <button onClick={() => setDeleteConfirm({ type: 'roster', item: m })} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Trash2 size={12} /></button>
                     </div>
                   </div>
                 ))}
@@ -1224,6 +1222,44 @@ export default function Sports() {
           onClose={() => setRosterModal(null)}
         />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          const dc = deleteConfirm
+          if (dc.type === 'sport') {
+            if (activeSportId === dc.item.id) setActiveSportId(null)
+            deleteSport(dc.item.id).then(({ error }) => {
+              if (error) showToast({ message: 'Delete failed', variant: 'error' })
+              else showToast({ message: 'Sport deleted', variant: 'success' })
+            })
+          } else if (dc.type === 'session') {
+            deleteSession(dc.item.id)
+          } else if (dc.type === 'drill') {
+            deleteDrill(dc.item.id)
+          } else if (dc.type === 'equipment') {
+            deleteEquipment(dc.item.id)
+          } else if (dc.type === 'roster') {
+            deleteRosterMember(dc.item.id)
+          }
+        }}
+        title={
+          deleteConfirm?.type === 'sport'     ? `Delete "${deleteConfirm.item?.name}"?` :
+          deleteConfirm?.type === 'session'   ? 'Delete session?' :
+          deleteConfirm?.type === 'drill'     ? `Delete "${deleteConfirm.item?.name}"?` :
+          deleteConfirm?.type === 'equipment' ? `Delete "${deleteConfirm.item?.name}"?` :
+          deleteConfirm?.type === 'roster'    ? `Remove ${deleteConfirm.item?.name}?` : 'Delete?'
+        }
+        description={
+          deleteConfirm?.type === 'sport'     ? 'This will also remove all its sessions, drills, gear and roster.' :
+          deleteConfirm?.type === 'session'   ? 'This session will be permanently removed.' :
+          deleteConfirm?.type === 'drill'     ? 'This drill will be permanently removed.' :
+          deleteConfirm?.type === 'equipment' ? 'This gear item will be permanently removed.' :
+          'This player will be removed from the roster.'
+        }
+        confirmLabel={deleteConfirm?.type === 'roster' ? 'Remove' : 'Delete'}
+      />
     </div>
   )
 }

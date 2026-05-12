@@ -10,6 +10,7 @@ import { useGymStore } from '../../stores/useGymStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { DEFAULT_EXERCISES, MUSCLE_GROUPS, SPLIT_TYPES } from '../../lib/exercises'
 import { showToast } from '../../lib/toast'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 // ─── Exercise picker sheet ────────────────────────────────────────────────────
 function ExercisePicker({ onSelect, onClose, customExercises }) {
@@ -453,6 +454,7 @@ export default function Gym() {
   const [activeSession, setActiveSession] = useState(null) // { workout, exercises }
   const [customExModal, setCustomExModal] = useState(false)
   const [expandedLog, setExpandedLog] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const { fetchLogSets, logSets } = useGymStore()
 
   useEffect(() => {
@@ -581,7 +583,7 @@ export default function Gym() {
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => setWorkoutModal(w)} className="p-1.5 rounded-lg" style={{ color: 'var(--fg-3)' }}><Edit2 size={13} /></button>
-                        <button onClick={() => deleteWorkout(w.id)} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-3)' }}><Trash2 size={13} /></button>
+                        <button onClick={() => setDeleteConfirm({ type: 'workout', item: w })} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-3)' }}><Trash2 size={13} /></button>
                         <button onClick={() => startWorkout(w)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold ml-1"
                           style={{ background: 'oklch(0.72 0.14 30)', color: '#fff' }}
@@ -626,7 +628,7 @@ export default function Gym() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); deleteLog(log.id) }} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-4)' }}><Trash2 size={12} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ type: 'log', item: log }) }} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-4)' }}><Trash2 size={12} /></button>
                         {isExpanded ? <ChevronUp size={14} style={{ color: 'var(--fg-3)' }} /> : <ChevronDown size={14} style={{ color: 'var(--fg-3)' }} />}
                       </div>
                     </button>
@@ -668,7 +670,7 @@ export default function Gym() {
                           <p className="text-sm font-medium" style={{ color: 'var(--fg)' }}>{e.name}</p>
                           <p className="text-[10px] mt-0.5" style={{ color: 'var(--fg-3)' }}>{e.muscle_group} · {e.category}</p>
                         </div>
-                        <button onClick={() => deleteCustomExercise(e.id)} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-4)' }}><Trash2 size={12} /></button>
+                        <button onClick={() => setDeleteConfirm({ type: 'exercise', item: e })} className="p-1.5 rounded-lg hover:text-rose-500" style={{ color: 'var(--fg-4)' }}><Trash2 size={12} /></button>
                       </div>
                     ))}
                   </div>
@@ -711,6 +713,27 @@ export default function Gym() {
       {customExModal && (
         <CustomExerciseModal userId={user.id} onClose={() => setCustomExModal(false)} />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          const dc = deleteConfirm
+          if (dc.type === 'workout') deleteWorkout(dc.item.id)
+          else if (dc.type === 'log') deleteLog(dc.item.id)
+          else if (dc.type === 'exercise') deleteCustomExercise(dc.item.id)
+        }}
+        title={
+          deleteConfirm?.type === 'workout'  ? `Delete "${deleteConfirm.item?.name}"?` :
+          deleteConfirm?.type === 'log'      ? `Delete log from ${deleteConfirm.item?.date ? deleteConfirm.item.date : 'this session'}?` :
+          `Delete "${deleteConfirm.item?.name}"?`
+        }
+        description={
+          deleteConfirm?.type === 'workout'  ? 'This workout plan will be permanently deleted.' :
+          deleteConfirm?.type === 'log'      ? 'This workout log and all its sets will be permanently deleted.' :
+          'This custom exercise will be permanently deleted.'
+        }
+      />
     </>
   )
 }

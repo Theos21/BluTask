@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useBooksStore } from '../../stores/useBooksStore'
 import { format, getYear } from 'date-fns'
 import { showToast } from '../../lib/toast'
+import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -334,6 +335,7 @@ function BookCard({ book, onEdit, onDelete, onUpdatePage }) {
   const [addingNote, setAddingNote] = useState(false)
   const [editingPage, setEditingPage] = useState(false)
   const [pageInput, setPageInput] = useState(book.current_page ?? '')
+  const [deleteNoteConfirm, setDeleteNoteConfirm] = useState(null)
   const { fetchBookNotes, addBookNote, deleteBookNote } = useBooksStore()
 
   const progress = book.total_pages && book.current_page
@@ -457,7 +459,7 @@ function BookCard({ book, onEdit, onDelete, onUpdatePage }) {
                   <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>{note.content}</p>
                   {note.page_number && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--fg-3)' }}>p. {note.page_number}</p>}
                 </div>
-                <button onClick={() => handleDeleteNote(note.id)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--fg-4)', padding: 2, flexShrink: 0 }}><X size={12} /></button>
+                <button onClick={() => setDeleteNoteConfirm(note)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--fg-4)', padding: 2, flexShrink: 0 }}><X size={12} /></button>
               </div>
             )
           })}
@@ -478,6 +480,14 @@ function BookCard({ book, onEdit, onDelete, onUpdatePage }) {
           )}
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteNoteConfirm}
+        onClose={() => setDeleteNoteConfirm(null)}
+        onConfirm={() => handleDeleteNote(deleteNoteConfirm.id)}
+        title="Delete note?"
+        description="This note will be permanently removed."
+      />
     </div>
   )
 }
@@ -498,6 +508,7 @@ export default function Books() {
   const [tab, setTab]         = useState('reading')
   const [modalBook, setModalBook] = useState(null)  // null=closed, false=add, obj=edit
   const [goalModal, setGoalModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useEffect(() => {
     if (!user) return
@@ -530,8 +541,8 @@ export default function Books() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this book?')) return
+  async function handleDeleteConfirmed() {
+    const id = deleteConfirm
     const { error } = await deleteBook(id)
     if (error) showToast({ message: 'Failed to delete', variant: 'error' })
   }
@@ -649,7 +660,7 @@ export default function Books() {
             key={book.id}
             book={book}
             onEdit={b => setModalBook(b)}
-            onDelete={handleDelete}
+            onDelete={(id) => setDeleteConfirm(id)}
             onUpdatePage={handleUpdatePage}
           />
         ))}
@@ -670,6 +681,14 @@ export default function Books() {
           onSave={handleGoalSave}
         />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={handleDeleteConfirmed}
+        title="Delete this book?"
+        description="The book and all its notes will be permanently deleted."
+      />
     </div>
   )
 }
