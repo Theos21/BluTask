@@ -1,11 +1,8 @@
 import UIKit
 import Capacitor
 
-/// Subclass of CAPBridgeViewController so we can register app-embedded
-/// Capacitor plugins (NativeNotificationsPlugin) before the bridge loads.
+/// CAPBridgeViewController subclass — required because Main.storyboard references
+/// this class name as the root view controller's customClass.
+/// No custom plugins: @capacitor/local-notifications registers automatically via SPM.
 @objc(BluTaskBridgeViewController)
-class BluTaskBridgeViewController: CAPBridgeViewController {
-    override open func capacitorDidLoad() {
-        bridge?.registerPluginType(NativeNotificationsPlugin.self)
-    }
-}
+class BluTaskBridgeViewController: CAPBridgeViewController {}
