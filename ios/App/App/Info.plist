@@ -60,5 +60,10 @@
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>BluTask sends reminders before task and assignment deadlines so nothing falls through the cracks.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

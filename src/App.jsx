@@ -121,11 +121,13 @@ export default function App() {
     async function setupLocalNotifications() {
       let status = await getPermissionStatus()
 
-      // Request permission at first launch if the OS hasn't asked yet.
-      // On iOS the system dialog appears once; subsequent launches skip this branch.
-      if (status === 'prompt') {
-        const granted = await requestPermission()
-        status = granted ? 'granted' : await getPermissionStatus()
+      // Request permission on first launch ('prompt') OR if the permission check
+      // itself failed ('error') — the native requestPermissions() call might
+      // succeed even when checkPermissions() timed out (lazy plugin init on iOS).
+      // requestPermission() returns 'granted' | 'denied' | 'error' directly, so
+      // we assign the result as the new status without a second bridge call.
+      if (status === 'prompt' || status === 'error') {
+        status = await requestPermission()
       }
 
       if (status !== 'granted') return
