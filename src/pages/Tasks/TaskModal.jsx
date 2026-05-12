@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Check, Tag, X, Eye, EyeOff, Bell } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import DateTimePicker from '../../components/date-time-picker'
 import { showToast } from '../../lib/toast'
 import Modal from '../../components/ui/Modal'
@@ -35,6 +35,7 @@ export default function TaskModal({
   const [notesPreview, setNotesPreview] = useState(false)
   const [reminders, setReminders] = useState([]) // array of ISO datetime strings
   const [addingReminder, setAddingReminder] = useState(false)
+  const [pendingReminder, setPendingReminder] = useState(null) // ISO string being picked
   const [checkItems, setCheckItems] = useState([])
   const [newCheckItem, setNewCheckItem] = useState('')
   const [saving, setSaving] = useState(false)
@@ -58,6 +59,7 @@ export default function TaskModal({
       setNotes(editTask.notes || '')
       setReminders(Array.isArray(editTask.reminders) ? editTask.reminders : [])
       setAddingReminder(false)
+      setPendingReminder(null)
       setSelectedTagIds(taskTags[editTask.id] ? [...taskTags[editTask.id]] : [])
       fetchChecklistItems(editTask.id).then(() => {
         const items = checklistItems[editTask.id] || []
@@ -72,6 +74,7 @@ export default function TaskModal({
       setNotes('')
       setReminders([])
       setAddingReminder(false)
+      setPendingReminder(null)
       setCheckItems([])
       setSelectedTagIds([])
     }
@@ -269,17 +272,18 @@ export default function TaskModal({
             Reminders
           </label>
 
+          {/* Existing reminder rows */}
           {reminders.length > 0 && (
             <div className="space-y-1.5 mb-2">
               {reminders.map((r, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
                   <span className="text-xs text-gray-700 dark:text-gray-300">
-                    {format(parseISO(r), 'MMM d, yyyy · h:mm a')}
+                    {format(new Date(r), 'MMM d, yyyy · h:mm a')}
                   </span>
                   <button
                     type="button"
                     onClick={() => setReminders((prev) => prev.filter((_, j) => j !== i))}
-                    className="text-gray-400 hover:text-rose-500 transition-colors ml-2"
+                    className="text-gray-400 hover:text-rose-500 transition-colors ml-2 flex-shrink-0"
                   >
                     <X size={13} />
                   </button>
@@ -288,22 +292,38 @@ export default function TaskModal({
             </div>
           )}
 
+          {/* Add reminder: pick date+time first, then confirm with Add button */}
           {addingReminder ? (
-            <div className="space-y-1">
+            <div className="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
               <DateTimePicker
-                value={null}
-                onChange={(val) => {
-                  if (val) setReminders((prev) => [...prev, val])
-                  setAddingReminder(false)
-                }}
+                value={pendingReminder}
+                onChange={setPendingReminder}
               />
-              <button
-                type="button"
-                onClick={() => setAddingReminder(false)}
-                className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (pendingReminder) setReminders((prev) => [...prev, pendingReminder])
+                    setPendingReminder(null)
+                    setAddingReminder(false)
+                  }}
+                  className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${
+                    pendingReminder
+                      ? 'bg-[color:var(--color-accent)] text-white hover:opacity-90'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                  disabled={!pendingReminder}
+                >
+                  Add reminder
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPendingReminder(null); setAddingReminder(false) }}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : reminders.length < 5 && (
             <button

@@ -1,22 +1,19 @@
 /**
  * localNotifications.js
  *
- * iOS: uses NativeNotificationsPlugin compiled directly into the app binary.
- *      Registered via BluTaskBridgeViewController.capacitorDidLoad().
- *      No SPM bridge overhead — direct UNUserNotificationCenter wrapper.
- * Android: uses @capacitor/local-notifications (SPM plugin + channel setup).
- * Web: no-op (browser notifications handled elsewhere).
+ * Uses @capacitor/local-notifications (SPM plugin, auto-registered at boot).
+ * Works on iOS and Android. Web: no-op.
+ *
+ * NativeNotificationsPlugin.swift / BluTaskBridgeViewController.swift remain
+ * compiled into the binary but are no longer called from JS — the SPM plugin
+ * is more reliable because it needs no manual registration.
  */
 
-import { Capacitor, registerPlugin } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 
 const IS_NATIVE  = Capacitor.isNativePlatform()
 const IS_ANDROID = Capacitor.getPlatform() === 'android'
-const IS_IOS     = Capacitor.getPlatform() === 'ios'
 const TAG        = '[LocalNotif]'
-
-// iOS: compiled-in plugin, registered by BluTaskBridgeViewController.capacitorDidLoad()
-const NativeNotif = registerPlugin('NativeNotifications')
 
 // ── Prefs cache ───────────────────────────────────────────────────────────────
 
@@ -31,21 +28,21 @@ let _prefs = {
 export function updatePrefsCache(prefs) { _prefs = { ..._prefs, ...prefs } }
 export function getPrefsCache()         { return { ..._prefs } }
 
-// ── Android plugin loader ─────────────────────────────────────────────────────
+// ── Plugin loader ─────────────────────────────────────────────────────────────
 
-let _lnPlugin = null
+let _plugin = null
 
-async function getLNPlugin() {
-  if (_lnPlugin) {
-    if (_lnPlugin.error) throw _lnPlugin.error
-    return _lnPlugin.plugin
+async function getPlugin() {
+  if (_plugin) {
+    if (_plugin.error) throw _plugin.error
+    return _plugin.plugin
   }
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
-    _lnPlugin = { plugin: LocalNotifications }
+    _plugin = { plugin: LocalNotifications }
     return LocalNotifications
   } catch (err) {
-    _lnPlugin = { error: err }
+    _plugin = { error: err }
     throw err
   }
 }
@@ -77,54 +74,38 @@ const TEST_ID  = 1999999999
 const CH_REMINDERS = 'blutask-reminders'
 const CH_SUMMARY   = 'blutask-summary'
 
-// ── Platform-aware notification builders ──────────────────────────────────────
+// ── Notification builders ─────────────────────────────────────────────────────
 
 function oneShot(id, title, body, scheduledAt) {
-  if (IS_IOS) return { id, title, body, scheduledAt }
   const n = { id, title, body, schedule: { at: new Date(scheduledAt), allowWhileIdle: true } }
   if (IS_ANDROID) n.channelId = CH_REMINDERS
   return n
 }
 
 function daily(id, title, body, hour) {
-  if (IS_IOS) return { id, title, body, repeating: true, hour, minute: 0 }
   const n = { id, title, body, schedule: { on: { hour, minute: 0 }, repeats: true, allowWhileIdle: true } }
   if (IS_ANDROID) n.channelId = CH_SUMMARY
   return n
 }
 
-// ── Platform-specific primitives ──────────────────────────────────────────────
+// ── Core primitives ───────────────────────────────────────────────────────────
 
 async function scheduleNotifs(notifications) {
-  if (IS_IOS) {
-    await withTimeout(NativeNotif.schedule({ notifications }), 8000, 'iOS schedule')
-    return
-  }
-  const LN = await getLNPlugin()
-  await ensureAndroidChannels(LN)
-  await withTimeout(LN.schedule({ notifications }), 8000, 'Android schedule')
+  const LN = await getPlugin()
+  if (IS_ANDROID) await ensureAndroidChannels(LN)
+  await withTimeout(LN.schedule({ notifications }), 8000, 'schedule')
 }
 
 async function cancelByIds(ids) {
   if (!ids.length) return
-  if (IS_IOS) {
-    await NativeNotif.cancel({ ids: ids.map(String) })
-    return
-  }
-  const LN = await getLNPlugin()
+  const LN = await getPlugin()
   await LN.cancel({ notifications: ids.map((id) => ({ id })) })
 }
 
 async function getPendingIds() {
-  if (IS_IOS) {
-    try {
-      const { ids } = await withTimeout(NativeNotif.getPending(), 4000, 'iOS getPending')
-      return (ids ?? []).map(Number)
-    } catch { return [] }
-  }
   try {
-    const LN = await getLNPlugin()
-    const { notifications: pending } = await withTimeout(LN.getPending(), 4000, 'Android getPending')
+    const LN = await getPlugin()
+    const { notifications: pending } = await withTimeout(LN.getPending(), 4000, 'getPending')
     return (pending ?? []).map((n) => n.id)
   } catch { return [] }
 }
@@ -146,7 +127,7 @@ async function ensureAndroidChannels(LN) {
       LN.createChannel({ id: CH_REMINDERS, name: 'Task Reminders',
         importance: 5, visibility: 1, sound: 'default', vibration: true }),
       4000, 'createChannel reminders'
-    ).catch((e) => console.warn(TAG, 'createChannel:', e.message))
+    ).catch((e) => console.warn(TAG, 'createChannel reminders:', e.message))
   }
   if (!ids.includes(CH_SUMMARY)) {
     await withTimeout(
@@ -163,66 +144,30 @@ async function ensureAndroidChannels(LN) {
 
 /**
  * Returns 'granted' | 'denied' | 'prompt' | 'error'
- *
- * iOS: tries NativeNotificationsPlugin first (compiled into binary).
- *      Falls back to @capacitor/local-notifications if the plugin isn't
- *      registered yet (e.g. BluTaskBridgeViewController not loaded).
  */
 export async function getPermissionStatus() {
   if (!IS_NATIVE) return 'prompt'
-
-  if (IS_IOS) {
-    // Primary: NativeNotificationsPlugin — direct UNUserNotificationCenter call
-    try {
-      const { status } = await withTimeout(
-        NativeNotif.checkPermission(), 3000, 'iOS checkPermission'
-      )
-      console.log(TAG, 'iOS permission (NativeNotif):', status)
-      return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'prompt'
-    } catch (primaryErr) {
-      console.warn(TAG, 'NativeNotif.checkPermission failed, trying LN fallback:', primaryErr.message)
-    }
-
-    // Fallback: @capacitor/local-notifications SPM plugin
-    try {
-      const LN = await getLNPlugin()
-      const { display } = await withTimeout(LN.checkPermissions(), 3000, 'iOS LN checkPermissions')
-      console.log(TAG, 'iOS permission (LN fallback):', display)
-      return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt'
-    } catch (fallbackErr) {
-      console.error(TAG, 'iOS permission check both paths failed:', fallbackErr.message)
-      return 'error'
-    }
-  }
-
-  // Android
   try {
-    const LN = await getLNPlugin()
-    const { display } = await withTimeout(LN.checkPermissions(), 5000, 'Android checkPermissions')
-    console.log(TAG, 'Android permission:', display)
+    const LN = await getPlugin()
+    const { display } = await withTimeout(LN.checkPermissions(), 5000, 'checkPermissions')
+    console.log(TAG, 'permission:', display)
     return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt'
   } catch (err) {
-    console.error(TAG, 'Android getPermissionStatus error:', err.message)
+    console.error(TAG, 'getPermissionStatus error:', err.message)
     return 'error'
   }
 }
 
 /**
  * Shows the OS permission dialog.
- * On iOS, permission is normally requested by AppDelegate at launch.
+ * On iOS, permission is normally requested by AppDelegate at launch — this is a fallback.
  * Returns 'granted' | 'denied' | 'error'
  */
 export async function requestPermission() {
   if (!IS_NATIVE) return 'error'
   try {
-    if (IS_IOS) {
-      const { granted } = await withTimeout(
-        NativeNotif.requestPermission(), 60_000, 'iOS requestPermission'
-      )
-      return granted ? 'granted' : 'denied'
-    }
-    const LN = await getLNPlugin()
-    const { display } = await withTimeout(LN.requestPermissions(), 60_000, 'Android requestPermissions')
+    const LN = await getPlugin()
+    const { display } = await withTimeout(LN.requestPermissions(), 60_000, 'requestPermissions')
     return display === 'granted' ? 'granted' : 'denied'
   } catch (err) {
     console.error(TAG, 'requestPermission error:', err.message)
@@ -261,7 +206,7 @@ export async function scheduleTaskReminders(task) {
     const explicit = Array.isArray(task.reminders) ? task.reminders : []
 
     if (explicit.length > 0) {
-      // User set explicit reminder times — fire at each exact time
+      // Explicit reminder times — fire at each exact timestamp
       explicit.slice(0, 5).forEach((isoTime, i) => {
         const at = new Date(isoTime).getTime()
         if (at > now) {
@@ -274,7 +219,7 @@ export async function scheduleTaskReminders(task) {
         }
       })
     } else if (task.due_date) {
-      // No explicit reminders — fall back to global prefs (1d / 1h before due date)
+      // No explicit reminders — use global pref offsets from due date
       const dueMs = new Date(task.due_date).getTime()
       if (_prefs.task_reminders_1d) {
         const at = dueMs - 864e5
@@ -297,7 +242,7 @@ export async function scheduleTaskReminders(task) {
 export async function cancelTaskReminders(taskId) {
   if (!IS_NATIVE) return
   try {
-    // Cancel all possible IDs: explicit reminders r0-r4 + legacy 1d/1h offsets
+    // Cancel all possible IDs: explicit (r0–r4) + legacy pref offsets (1d, 1h)
     await cancelByIds([
       notifId(taskId, '1d'),
       notifId(taskId, '1h'),
@@ -313,8 +258,8 @@ export async function cancelTaskReminders(taskId) {
 export async function scheduleAssignmentReminders(assignment) {
   if (!IS_NATIVE || !assignment?.id || !assignment?.due_date || !_prefs.assignment_alerts) return
   try {
-    const dueMs  = new Date(assignment.due_date).getTime()
-    const now    = Date.now()
+    const dueMs = new Date(assignment.due_date).getTime()
+    const now   = Date.now()
     const notifs = []
     const at1d = dueMs - 864e5
     if (at1d > now) notifs.push(oneShot(notifId(assignment.id, 'a1d'), 'Assignment due tomorrow', assignment.title ?? 'Upcoming assignment', at1d))
@@ -370,7 +315,7 @@ export async function rescheduleAll(tasks, assignments, prefs) {
   console.log(TAG, `rescheduleAll: ${tasks.length} tasks, ${assignments.length} assignments`)
   try {
     const pendingIds = await getPendingIds()
-    const toCancel = pendingIds.filter((id) => id !== DAILY_ID)
+    const toCancel   = pendingIds.filter((id) => id !== DAILY_ID)
     if (toCancel.length) await cancelByIds(toCancel).catch(() => {})
     for (const t of tasks)       if (!t.completed && t.due_date) await scheduleTaskReminders(t)
     for (const a of assignments) if (!a.completed && a.due_date) await scheduleAssignmentReminders(a)
@@ -389,8 +334,8 @@ export async function rescheduleAll(tasks, assignments, prefs) {
 export async function getExactAlarmStatus() {
   if (!IS_NATIVE || !IS_ANDROID) return 'granted'
   try {
-    const LN = await getLNPlugin()
-    const { exact_alarm } = await withTimeout(LN.checkExactNotificationSetting(), 5000, 'checkExactNotificationSetting')
+    const LN = await getPlugin()
+    const { exact_alarm } = await withTimeout(LN.checkExactNotificationSetting(), 5000, 'checkExactAlarm')
     return exact_alarm
   } catch { return 'unknown' }
 }
@@ -398,21 +343,21 @@ export async function getExactAlarmStatus() {
 export async function requestExactAlarmPermission() {
   if (!IS_NATIVE || !IS_ANDROID) return
   try {
-    const LN = await getLNPlugin()
-    await withTimeout(LN.changeExactNotificationSetting(), 120_000, 'changeExactNotificationSetting')
+    const LN = await getPlugin()
+    await withTimeout(LN.changeExactNotificationSetting(), 120_000, 'changeExactAlarm')
   } catch (err) {
     console.warn(TAG, 'changeExactNotificationSetting failed:', err.message)
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FOREGROUND LISTENER (Android only — iOS delivery handled by AppDelegate)
+// FOREGROUND LISTENER (Android only — iOS handled by AppDelegate willPresent)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function addLocalNotificationListener(handler) {
   if (!IS_NATIVE || !IS_ANDROID) return () => {}
   try {
-    const LN = await getLNPlugin()
+    const LN = await getPlugin()
     const h = await LN.addListener('localNotificationReceived', handler)
     return () => h.remove()
   } catch {
@@ -420,7 +365,7 @@ export async function addLocalNotificationListener(handler) {
   }
 }
 
-export function resetPluginCache() { _lnPlugin = null }
+export function resetPluginCache() { _plugin = null }
 
 // Legacy aliases
 export const requestWebPermission    = requestPermission
