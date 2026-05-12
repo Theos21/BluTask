@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Bell, BellOff, Mail, Calendar, BookOpen, Clock, Sunrise,
+  Bell, BellOff, Calendar, BookOpen, Clock, Sunrise,
   CheckCircle, XCircle, AlertTriangle, Send, RefreshCw,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
@@ -196,9 +196,7 @@ function TestNotificationRow({ permStatus }) {
 
 export default function NotificationsSection() {
   const { notificationsEnabled, setNotificationsEnabled } = useAppStore()
-  const { profile, updateProfile } = useAuthStore()
   const { user } = useAuthStore()
-  const weeklyDigest = profile?.weekly_digest ?? false
 
   const [prefs, setPrefs] = useState(DEFAULT_PREFS)
   const [loading, setLoading] = useState(true)
@@ -420,15 +418,6 @@ export default function NotificationsSection() {
         )}
       </div>
 
-      {/* Weekly email digest */}
-      <PrefRow
-        icon={Mail}
-        title="Weekly email digest"
-        description="A summary of your week every Monday morning"
-        enabled={weeklyDigest}
-        onToggle={() => updateProfile({ weekly_digest: !weeklyDigest })}
-        borderTop
-      />
     </div>
   )
 }
