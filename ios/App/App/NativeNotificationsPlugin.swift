@@ -67,33 +67,45 @@ public class NativeNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
         var errors: [String] = []
 
         for notif in notifications {
-            guard let id = notif["id"] as? Int else { continue }
+            // Capacitor bridge delivers all JS numbers as Double — handle both Int and Double
+            let id: Int
+            if let i = notif["id"] as? Int         { id = i }
+            else if let d = notif["id"] as? Double { id = Int(d) }
+            else                                    { continue }
 
-            let content       = UNMutableNotificationContent()
-            content.title     = notif["title"] as? String ?? ""
-            content.body      = notif["body"]  as? String ?? ""
-            content.sound     = .default
+            let content   = UNMutableNotificationContent()
+            content.title = notif["title"] as? String ?? ""
+            content.body  = notif["body"]  as? String ?? ""
+            content.sound = .default
 
             let trigger: UNNotificationTrigger
-
             let isRepeating = notif["repeating"] as? Bool ?? false
-            if isRepeating,
-               let hour   = notif["hour"]   as? Int,
-               let minute = notif["minute"] as? Int {
-                // Daily repeating notification — UNCalendarNotificationTrigger repeats: true
+
+            if isRepeating {
+                // hour/minute also come as Double from the JS bridge
+                let hour: Int
+                let minute: Int
+                if let i = notif["hour"]   as? Int         { hour   = i }
+                else if let d = notif["hour"]   as? Double { hour   = Int(d) }
+                else                                        { continue }
+                if let i = notif["minute"] as? Int         { minute = i }
+                else if let d = notif["minute"] as? Double { minute = Int(d) }
+                else                                        { continue }
+
                 var dc    = DateComponents()
                 dc.hour   = hour
                 dc.minute = minute
                 trigger   = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+
             } else if let scheduledAt = notif["scheduledAt"] as? Double {
-                // One-shot at a specific time (milliseconds since epoch)
                 let fireDate = Date(timeIntervalSince1970: scheduledAt / 1_000.0)
                 guard fireDate > Date() else { continue }
-                let dc   = Calendar.current.dateComponents(
+                let dc  = Calendar.current.dateComponents(
                     [.year, .month, .day, .hour, .minute, .second],
                     from: fireDate
                 )
-                trigger  = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
+                trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
+
             } else {
                 continue
             }
@@ -106,9 +118,7 @@ public class NativeNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
 
             group.enter()
             center.add(request) { error in
-                if let e = error {
-                    errors.append("\(id): \(e.localizedDescription)")
-                }
+                if let e = error { errors.append("\(id): \(e.localizedDescription)") }
                 group.leave()
             }
         }

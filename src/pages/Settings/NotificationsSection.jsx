@@ -204,6 +204,19 @@ export default function NotificationsSection() {
     getPermissionStatus().then(setPermStatus).catch(() => setPermStatus('error'))
   }, [])
 
+  // Re-check permission when app returns to foreground — covers the case where
+  // the user opened iOS Settings, granted permission, then came back to the app
+  useEffect(() => {
+    if (!isCapacitor) return
+    let handle
+    import('@capacitor/app').then(({ App: CapApp }) =>
+      CapApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) getPermissionStatus().then(setPermStatus).catch(() => setPermStatus('error'))
+      }).then((h) => { handle = h })
+    ).catch(() => {})
+    return () => { handle?.remove() }
+  }, [])
+
   // Load notification prefs from DB
   useEffect(() => {
     if (!user) return
