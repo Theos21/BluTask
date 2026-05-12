@@ -6,7 +6,6 @@ import { supabase } from './lib/supabase'
 import { markOAuthCallbackReceived } from './lib/oauthCallback'
 import {
   getPermissionStatus,
-  requestPermission,
   rescheduleAll,
   addLocalNotificationListener,
 } from './services/localNotifications'
@@ -120,24 +119,16 @@ export default function App() {
 
   useEffect(() => { init() }, [])
 
-  // Local notifications: request permission + re-sync scheduled notifications
-  // after login so they survive app reinstalls and preference changes.
+  // Local notifications: re-sync scheduled notifications after login.
+  // Permission is requested natively by AppDelegate.swift at launch
+  // (UNUserNotificationCenter.requestAuthorization) — never from JS, to
+  // avoid competing requestAuthorization calls that cause iOS to hang.
   useEffect(() => {
     if (!user || !isCapacitor) return
     let removeListener = () => {}
 
     async function setupLocalNotifications() {
-      let status = await getPermissionStatus()
-
-      // Request permission on first launch ('prompt') OR if the permission check
-      // itself failed ('error') — the native requestPermissions() call might
-      // succeed even when checkPermissions() timed out (lazy plugin init on iOS).
-      // requestPermission() returns 'granted' | 'denied' | 'error' directly, so
-      // we assign the result as the new status without a second bridge call.
-      if (status === 'prompt' || status === 'error') {
-        status = await requestPermission()
-      }
-
+      const status = await getPermissionStatus()
       if (status !== 'granted') return
 
       // Re-sync all scheduled notifications against current DB state

@@ -8,9 +8,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Make this class the UNUserNotificationCenter delegate so notifications
-        // are delivered as banners even while the app is in the foreground.
-        UNUserNotificationCenter.current().delegate = self
+        let center = UNUserNotificationCenter.current()
+
+        // Deliver notifications as banners + sound even when the app is in the foreground.
+        center.delegate = self
+
+        // Request authorization once, following Apple's documentation.
+        // iOS only shows the dialog when status is .notDetermined; subsequent
+        // calls return the current status immediately without any dialog.
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("[Notifications] requestAuthorization error: \(error.localizedDescription)")
+            } else {
+                print("[Notifications] Authorization \(granted ? "granted" : "denied")")
+            }
+        }
+
         return true
     }
 
@@ -39,7 +52,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler([.banner, .sound, .badge])
     }
 
-    /// Handle tap on a delivered notification (foreground or background).
+    /// Handle tap on a delivered notification.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {

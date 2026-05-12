@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Bell, BellOff, Calendar, BookOpen, Clock, Sunrise,
   CheckCircle, XCircle, AlertTriangle, Send, RefreshCw,
@@ -12,7 +12,6 @@ import {
   cancelDailySummary,
   rescheduleAll,
   getPermissionStatus,
-  requestPermission,
   sendTestNotification,
 } from '../../services/localNotifications'
 import { isCapacitor } from '../../hooks/useMobileApp'
@@ -66,7 +65,7 @@ function PrefRow({ icon: Icon, title, description, enabled, onToggle, borderTop,
 
 // ── Permission status banner ──────────────────────────────────────────────────
 
-function PermissionBanner({ status, onRequest, onRefresh, requesting }) {
+function PermissionBanner({ status, onRefresh }) {
   if (!isCapacitor) return null
 
   if (status === 'granted') {
@@ -89,16 +88,24 @@ function PermissionBanner({ status, onRequest, onRefresh, requesting }) {
           <div>
             <p className="text-xs font-semibold text-rose-300">Notifications blocked</p>
             <p className="text-xs text-rose-400/80 mt-0.5">
-              Open <strong>Settings → BluTask → Notifications</strong> and enable "Allow Notifications".
+              Enable "Allow Notifications" in iOS Settings to receive reminders.
             </p>
           </div>
         </div>
-        <button
-          onClick={onRefresh}
-          className="w-full text-xs text-rose-300 bg-rose-500/10 rounded-lg py-2 flex items-center justify-center gap-1.5 hover:bg-rose-500/20 transition-colors"
-        >
-          <RefreshCw size={12} /> Check again after enabling in Settings
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { window.open('app-settings:', '_system') }}
+            className="flex-1 text-xs text-rose-300 bg-rose-500/15 rounded-lg py-2 flex items-center justify-center gap-1.5 hover:bg-rose-500/25 transition-colors font-medium"
+          >
+            Open Settings
+          </button>
+          <button
+            onClick={onRefresh}
+            className="text-xs text-rose-400/60 bg-rose-500/10 rounded-lg py-2 px-3 flex items-center justify-center gap-1 hover:bg-rose-500/20 transition-colors"
+          >
+            <RefreshCw size={12} />
+          </button>
+        </div>
       </div>
     )
   }
@@ -109,7 +116,7 @@ function PermissionBanner({ status, onRequest, onRefresh, requesting }) {
         <div className="flex items-start gap-2">
           <AlertTriangle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-amber-300">
-            Could not check notification status. Make sure you're on the installed app, not a browser.
+            Could not read notification status. Try reopening the app.
           </p>
         </div>
         <button
@@ -122,30 +129,19 @@ function PermissionBanner({ status, onRequest, onRefresh, requesting }) {
     )
   }
 
-  // 'prompt' or null — not yet asked
+  // 'prompt' — iOS permission dialog appears automatically at app launch.
+  // If the user is seeing this, the dialog may still be pending or was dismissed.
   return (
     <div className="rounded-xl bg-[#1e293b] border border-gray-700/50 px-3 py-3 space-y-2">
       <p className="text-xs text-gray-400 leading-relaxed">
-        Allow BluTask to send you deadline reminders and task alerts.
+        BluTask requests notification permission when the app launches. Look for the iOS permission dialog, or go to <strong className="text-gray-300">Settings → BluTask → Notifications</strong> to enable manually.
       </p>
       <button
-        onClick={onRequest}
-        disabled={requesting}
-        className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold bg-[color:var(--color-accent)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={onRefresh}
+        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium bg-gray-700/50 text-gray-300 hover:bg-gray-700 transition-colors"
       >
-        <Bell size={14} />
-        {requesting ? (
-          <span className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Waiting for permission…
-          </span>
-        ) : 'Enable Notifications'}
+        <RefreshCw size={13} /> Check again
       </button>
-      {requesting && (
-        <p className="text-[11px] text-gray-500 text-center">
-          Respond to the iOS dialog above to continue
-        </p>
-      )}
     </div>
   )
 }
@@ -201,8 +197,6 @@ export default function NotificationsSection() {
   const [prefs, setPrefs] = useState(DEFAULT_PREFS)
   const [loading, setLoading] = useState(true)
   const [permStatus, setPermStatus] = useState(null) // null | 'granted' | 'denied' | 'prompt' | 'error'
-  const [requesting, setRequesting] = useState(false)
-  const safetyRef = useRef(null)
 
   // Load permission status once on mount
   useEffect(() => {
@@ -227,29 +221,6 @@ export default function NotificationsSection() {
         setLoading(false)
       })
   }, [user])
-
-  // Cleanup safety timer on unmount
-  useEffect(() => () => { if (safetyRef.current) clearTimeout(safetyRef.current) }, [])
-
-  async function handleRequestPermission() {
-    if (requesting) return
-    setRequesting(true)
-
-    // Safety net: if native bridge never responds (plugin crash, etc.),
-    // un-stick the button after 90s. Does NOT call back into the bridge
-    // (avoids the double-hang that caused the original stuck state).
-    safetyRef.current = setTimeout(() => {
-      setRequesting(false)
-      setPermStatus('error')
-    }, 90_000)
-
-    // requestPermission() now returns 'granted' | 'denied' | 'error' directly.
-    // No second bridge call needed — we trust the returned value.
-    const result = await requestPermission()
-    clearTimeout(safetyRef.current)
-    setPermStatus(result)
-    setRequesting(false)
-  }
 
   async function handleRefreshStatus() {
     const status = await getPermissionStatus().catch(() => 'error')
@@ -304,9 +275,7 @@ export default function NotificationsSection() {
       {isCapacitor && (
         <PermissionBanner
           status={permStatus}
-          onRequest={handleRequestPermission}
           onRefresh={handleRefreshStatus}
-          requesting={requesting}
         />
       )}
 
