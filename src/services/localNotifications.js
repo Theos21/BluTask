@@ -30,7 +30,7 @@ function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Timed out — run: npx cap sync android (${label})`)), ms)
+      setTimeout(() => reject(new Error(`Timed out after ${ms}ms (${label}) — plugin may not be registered`)), ms)
     ),
   ])
 }
@@ -61,18 +61,20 @@ export async function getPermissionStatus() {
 }
 
 /**
- * Shows the OS permission dialog. Returns true if granted.
+ * Shows the OS permission dialog. Returns 'granted' | 'denied' | 'error'.
+ * No internal timeout — the OS dialog resolves when the user responds.
+ * If the plugin is not registered Capacitor throws synchronously.
  */
 export async function requestPermission() {
-  if (!IS_NATIVE) return false
+  if (!IS_NATIVE) return 'error'
   try {
     const LN = await getLocalPlugin()
-    const { display } = await withTimeout(LN.requestPermissions(), 60000, 'requestPermissions')
+    const { display } = await LN.requestPermissions()
     console.log(TAG, 'requestPermissions result:', display)
-    return display === 'granted'
+    return display === 'granted' ? 'granted' : 'denied'
   } catch (err) {
     console.error(TAG, 'requestPermissions error:', err.message)
-    return false
+    return 'error'
   }
 }
 
@@ -353,4 +355,4 @@ export async function requestExactAlarmPermission() {
 export const requestWebPermission      = requestPermission
 export const initLocalNotifications    = requestPermission
 export const getWebPermission          = () => 'prompt'  // replaced by async getPermissionStatus()
-export const sendWebTestNotification   = () => ({ ok: false, reason: 'Use sendTestNotification() instead' })
+export const sendWebTestNotification   = sendTestNotification
