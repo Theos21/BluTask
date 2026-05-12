@@ -720,14 +720,15 @@ export default function Gym() {
         onClose={() => setDeleteConfirm(null)}
         onConfirm={() => {
           const dc = deleteConfirm
+          if (!dc?.item) return
           if (dc.type === 'workout') deleteWorkout(dc.item.id)
           else if (dc.type === 'log') deleteLog(dc.item.id)
           else if (dc.type === 'exercise') deleteCustomExercise(dc.item.id)
         }}
         title={
-          deleteConfirm?.type === 'workout'  ? `Delete "${deleteConfirm.item?.name}"?` :
-          deleteConfirm?.type === 'log'      ? `Delete log from ${deleteConfirm.item?.date ? deleteConfirm.item.date : 'this session'}?` :
-          `Delete "${deleteConfirm.item?.name}"?`
+          deleteConfirm?.type === 'workout'  ? `Delete "${deleteConfirm?.item?.name}"?` :
+          deleteConfirm?.type === 'log'      ? `Delete log from ${deleteConfirm?.item?.date ?? 'this session'}?` :
+          `Delete "${deleteConfirm?.item?.name}"?`
         }
         description={
           deleteConfirm?.type === 'workout'  ? 'This workout plan will be permanently deleted.' :
