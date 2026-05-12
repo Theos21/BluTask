@@ -49,6 +49,10 @@ workflows:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
           cap sync ios
+          # `cap sync` only scans node_modules plugins for packageClassList,
+          # so it strips out our local BluTaskNotificationsPlugin every time.
+          # Re-append it so Capacitor auto-registers the class at boot.
+          node -e "const fs=require('fs'); const p='ios/App/App/capacitor.config.json'; const c=JSON.parse(fs.readFileSync(p,'utf8')); if(!c.packageClassList.includes('BluTaskNotificationsPlugin')){c.packageClassList.push('BluTaskNotificationsPlugin'); fs.writeFileSync(p,JSON.stringify(c,null,'\t')); console.log('Patched packageClassList: added BluTaskNotificationsPlugin');} else {console.log('packageClassList already contains BluTaskNotificationsPlugin');}"
 
       - name: Resolve SPM packages
         script: |
@@ -131,6 +135,10 @@ workflows:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use 22
           cap sync ios
+          # `cap sync` only scans node_modules plugins for packageClassList,
+          # so it strips out our local BluTaskNotificationsPlugin every time.
+          # Re-append it so Capacitor auto-registers the class at boot.
+          node -e "const fs=require('fs'); const p='ios/App/App/capacitor.config.json'; const c=JSON.parse(fs.readFileSync(p,'utf8')); if(!c.packageClassList.includes('BluTaskNotificationsPlugin')){c.packageClassList.push('BluTaskNotificationsPlugin'); fs.writeFileSync(p,JSON.stringify(c,null,'\t')); console.log('Patched packageClassList: added BluTaskNotificationsPlugin');} else {console.log('packageClassList already contains BluTaskNotificationsPlugin');}"
 
       - name: Resolve SPM packages
         script: |
@@ -164,7 +172,7 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          xcrun agvtool new-version -all 73
+          xcrun agvtool new-version -all 74
 
       - name: Build IPA
         script: |
