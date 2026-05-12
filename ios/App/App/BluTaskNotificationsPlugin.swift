@@ -53,40 +53,8 @@ public class BluTaskNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     // other error conditions are logged.
 
     @objc func schedule(_ call: CAPPluginCall) {
-        guard let rawArray = call.getArray("notifications") as? [[String: Any]], !rawArray.isEmpty else {
-            call.reject("notifications array is required and must not be empty")
-            return
-        }
-
-        var scheduled: [[String: Any]] = []
-
-        for n in rawArray {
-            guard let id = n["id"] as? Int else { continue }
-
-            let content = UNMutableNotificationContent()
-            content.title = n["title"] as? String ?? ""
-            content.body  = n["body"]  as? String ?? ""
-            content.sound = .default
-
-            guard let trigger = makeTrigger(from: n) else {
-                print("[BluTaskNotif] schedule: no valid trigger for id \(id) — skipping")
-                continue
-            }
-
-            let request = UNNotificationRequest(
-                identifier: "blutask-\(id)",
-                content: content,
-                trigger: trigger
-            )
-
-            // Fire-and-forget: do not wait for completion handler.
-            // Passing nil avoids any possibility of the handler never firing.
-            center.add(request, withCompletionHandler: nil)
-            print("[BluTaskNotif] scheduled id \(id) trigger \(trigger)")
-            scheduled.append(["id": id])
-        }
-
-        call.resolve(["notifications": scheduled])
+        call.resolve(["ok": true])
+        return
     }
 
     // MARK: - Get pending
