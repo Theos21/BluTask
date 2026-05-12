@@ -8,22 +8,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let center = UNUserNotificationCenter.current()
-
-        // Deliver notifications as banners + sound even when the app is in the foreground.
-        center.delegate = self
-
-        // Request authorization once, following Apple's documentation.
-        // iOS only shows the dialog when status is .notDetermined; subsequent
-        // calls return the current status immediately without any dialog.
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("[Notifications] requestAuthorization error: \(error.localizedDescription)")
+        // Request authorization at launch so the system permission dialog appears
+        // on first run. @capacitor/local-notifications manages the
+        // UNUserNotificationCenterDelegate (sets it in plugin.load()) and handles
+        // foreground banner presentation — do NOT set center.delegate here.
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let e = error {
+                print("[Notifications] requestAuthorization error: \(e.localizedDescription)")
             } else {
                 print("[Notifications] Authorization \(granted ? "granted" : "denied")")
             }
         }
-
         return true
     }
 
@@ -39,23 +34,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    }
-}
-
-// MARK: - UNUserNotificationCenterDelegate
-extension AppDelegate: UNUserNotificationCenterDelegate {
-
-    /// Show notifications as banners + play sound even when the app is open.
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .sound, .badge])
-    }
-
-    /// Handle tap on a delivered notification.
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        completionHandler()
     }
 }

@@ -164,7 +164,7 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          xcrun agvtool new-version -all 68
+          xcrun agvtool new-version -all 69
 
       - name: Build IPA
         script: |
