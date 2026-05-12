@@ -133,7 +133,7 @@ export default function App() {
 
       // Re-sync all scheduled notifications against current DB state
       const [{ data: tasks }, { data: assignments }, { data: prefs }] = await Promise.all([
-        supabase.from('tasks').select('id, title, due_date, completed').eq('user_id', user.id).eq('completed', false),
+        supabase.from('tasks').select('id, title, due_date, reminders, completed').eq('user_id', user.id).eq('completed', false),
         supabase.from('assignments').select('id, title, due_date, completed').eq('user_id', user.id).eq('completed', false),
         supabase.from('notification_preferences').select('*').eq('user_id', user.id).maybeSingle(),
       ])

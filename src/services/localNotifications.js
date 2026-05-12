@@ -254,19 +254,38 @@ export async function sendTestNotification() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function scheduleTaskReminders(task) {
-  if (!IS_NATIVE || !task?.id || !task?.due_date) return
+  if (!IS_NATIVE || !task?.id) return
   try {
-    const dueMs  = new Date(task.due_date).getTime()
     const now    = Date.now()
     const notifs = []
-    if (_prefs.task_reminders_1d) {
-      const at = dueMs - 864e5
-      if (at > now) notifs.push(oneShot(notifId(task.id, '1d'), 'Task due tomorrow', task.title ?? 'Upcoming task', at))
+    const explicit = Array.isArray(task.reminders) ? task.reminders : []
+
+    if (explicit.length > 0) {
+      // User set explicit reminder times — fire at each exact time
+      explicit.slice(0, 5).forEach((isoTime, i) => {
+        const at = new Date(isoTime).getTime()
+        if (at > now) {
+          notifs.push(oneShot(
+            notifId(task.id, `r${i}`),
+            task.title ?? 'Reminder',
+            'Tap to view your task',
+            at,
+          ))
+        }
+      })
+    } else if (task.due_date) {
+      // No explicit reminders — fall back to global prefs (1d / 1h before due date)
+      const dueMs = new Date(task.due_date).getTime()
+      if (_prefs.task_reminders_1d) {
+        const at = dueMs - 864e5
+        if (at > now) notifs.push(oneShot(notifId(task.id, '1d'), 'Task due tomorrow', task.title ?? 'Upcoming task', at))
+      }
+      if (_prefs.task_reminders_1h) {
+        const at = dueMs - 36e5
+        if (at > now) notifs.push(oneShot(notifId(task.id, '1h'), 'Task due in 1 hour', task.title ?? 'Upcoming task', at))
+      }
     }
-    if (_prefs.task_reminders_1h) {
-      const at = dueMs - 36e5
-      if (at > now) notifs.push(oneShot(notifId(task.id, '1h'), 'Task due in 1 hour', task.title ?? 'Upcoming task', at))
-    }
+
     if (!notifs.length) return
     await scheduleNotifs(notifs)
     console.log(TAG, `Scheduled ${notifs.length} reminder(s) for "${task.title}"`)
@@ -278,7 +297,12 @@ export async function scheduleTaskReminders(task) {
 export async function cancelTaskReminders(taskId) {
   if (!IS_NATIVE) return
   try {
-    await cancelByIds([notifId(taskId, '1d'), notifId(taskId, '1h')])
+    // Cancel all possible IDs: explicit reminders r0-r4 + legacy 1d/1h offsets
+    await cancelByIds([
+      notifId(taskId, '1d'),
+      notifId(taskId, '1h'),
+      ...Array.from({ length: 5 }, (_, i) => notifId(taskId, `r${i}`)),
+    ])
   } catch { /* no-op */ }
 }
 

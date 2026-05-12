@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Check, Tag, X, Eye, EyeOff, Bell } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import DateTimePicker from '../../components/date-time-picker'
 import { showToast } from '../../lib/toast'
 import Modal from '../../components/ui/Modal'
@@ -32,7 +33,8 @@ export default function TaskModal({
   const [repeatRule, setRepeatRule] = useState('')
   const [notes, setNotes] = useState('')
   const [notesPreview, setNotesPreview] = useState(false)
-  const [reminderAt, setReminderAt] = useState(null)
+  const [reminders, setReminders] = useState([]) // array of ISO datetime strings
+  const [addingReminder, setAddingReminder] = useState(false)
   const [checkItems, setCheckItems] = useState([])
   const [newCheckItem, setNewCheckItem] = useState('')
   const [saving, setSaving] = useState(false)
@@ -54,7 +56,8 @@ export default function TaskModal({
       setPriority(editTask.priority || 'normal')
       setRepeatRule(editTask.repeat_rule || '')
       setNotes(editTask.notes || '')
-      setReminderAt(null)
+      setReminders(Array.isArray(editTask.reminders) ? editTask.reminders : [])
+      setAddingReminder(false)
       setSelectedTagIds(taskTags[editTask.id] ? [...taskTags[editTask.id]] : [])
       fetchChecklistItems(editTask.id).then(() => {
         const items = checklistItems[editTask.id] || []
@@ -67,7 +70,8 @@ export default function TaskModal({
       setPriority('normal')
       setRepeatRule('')
       setNotes('')
-      setReminderAt(null)
+      setReminders([])
+      setAddingReminder(false)
       setCheckItems([])
       setSelectedTagIds([])
     }
@@ -144,6 +148,7 @@ export default function TaskModal({
       repeat_rule: repeatRule || null,
       notes: notes.trim(),
       completed: editTask?.completed ?? false,
+      reminders: reminders.filter((r) => new Date(r) > new Date()), // drop past times on save
     }
 
     if (editTask) {
@@ -257,20 +262,57 @@ export default function TaskModal({
           )}
         </div>
 
-        {/* Reminder */}
+        {/* Reminders */}
         <div>
-          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
             <Bell size={11} />
-            Reminder
+            Reminders
           </label>
-          <DateTimePicker value={reminderAt} onChange={setReminderAt} />
-          {reminderAt && (
+
+          {reminders.length > 0 && (
+            <div className="space-y-1.5 mb-2">
+              {reminders.map((r, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <span className="text-xs text-gray-700 dark:text-gray-300">
+                    {format(parseISO(r), 'MMM d, yyyy · h:mm a')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReminders((prev) => prev.filter((_, j) => j !== i))}
+                    className="text-gray-400 hover:text-rose-500 transition-colors ml-2"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {addingReminder ? (
+            <div className="space-y-1">
+              <DateTimePicker
+                value={null}
+                onChange={(val) => {
+                  if (val) setReminders((prev) => [...prev, val])
+                  setAddingReminder(false)
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setAddingReminder(false)}
+                className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : reminders.length < 5 && (
             <button
               type="button"
-              onClick={() => setReminderAt(null)}
-              className="mt-1 text-[11px] text-gray-400 hover:text-rose-500 transition-colors"
+              onClick={() => setAddingReminder(true)}
+              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-[color:var(--color-accent)] transition-colors"
             >
-              Clear reminder
+              <Plus size={12} />
+              Add reminder
             </button>
           )}
         </div>

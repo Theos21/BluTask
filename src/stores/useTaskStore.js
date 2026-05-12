@@ -122,7 +122,7 @@ export const useTaskStore = create((set) => ({
       .single()
     if (!error) {
       set((s) => ({ tasks: [data, ...s.tasks] }))
-      if (data.due_date) scheduleTaskReminders(data).catch(() => {})
+      if (data.due_date || data.reminders?.length > 0) scheduleTaskReminders(data).catch(() => {})
     }
     return { data, error }
   },
@@ -136,9 +136,11 @@ export const useTaskStore = create((set) => ({
       .single()
     if (!error) {
       set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? data : t)) }))
-      if ('due_date' in updates) {
+      if ('due_date' in updates || 'reminders' in updates) {
         cancelTaskReminders(id).catch(() => {})
-        if (data.due_date && !data.completed) scheduleTaskReminders(data).catch(() => {})
+        if (!data.completed && (data.due_date || data.reminders?.length > 0)) {
+          scheduleTaskReminders(data).catch(() => {})
+        }
       }
     }
     return { data, error }
