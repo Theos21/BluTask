@@ -4,8 +4,6 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useAppStore } from './stores/useAppStore'
 import { supabase } from './lib/supabase'
 import { markOAuthCallbackReceived } from './lib/oauthCallback'
-import { Capacitor } from '@capacitor/core'
-import { initPushNotifications, savePushToken } from './services/notifications'
 import {
   getPermissionStatus,
   requestPermission,
@@ -102,15 +100,6 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useEffect(() => { init() }, [])
-
-  useEffect(() => {
-    if (!user) return
-    // APNs remote push token registration
-    initPushNotifications().then((token) => {
-      if (!token) return
-      savePushToken(supabase, user.id, token, Capacitor.getPlatform())
-    }).catch(() => {})
-  }, [user])
 
   // Local notifications: request permission + re-sync scheduled notifications
   // after login so they survive app reinstalls and preference changes.

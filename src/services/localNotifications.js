@@ -62,14 +62,15 @@ export async function getPermissionStatus() {
 
 /**
  * Shows the OS permission dialog. Returns 'granted' | 'denied' | 'error'.
- * No internal timeout — the OS dialog resolves when the user responds.
- * If the plugin is not registered Capacitor throws synchronously.
+ * Wrapped in a 60-second timeout: if the native bridge never calls back
+ * (plugin not registered, bridge deadlock) the function resolves as 'error'
+ * instead of hanging forever.
  */
 export async function requestPermission() {
   if (!IS_NATIVE) return 'error'
   try {
     const LN = await getLocalPlugin()
-    const { display } = await LN.requestPermissions()
+    const { display } = await withTimeout(LN.requestPermissions(), 60_000, 'requestPermissions')
     console.log(TAG, 'requestPermissions result:', display)
     return display === 'granted' ? 'granted' : 'denied'
   } catch (err) {

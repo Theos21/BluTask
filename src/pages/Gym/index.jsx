@@ -505,10 +505,10 @@ export default function Gym() {
         />
       )}
 
-      <div className="max-w-3xl mx-auto w-full h-full flex flex-col overflow-hidden">
+      <div className="max-w-3xl mx-auto w-full">
 
-        {/* Header */}
-        <div className="px-4 pt-4 pb-3 md:px-8 md:pt-6 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+        {/* Header — sticky so it stays visible while the page scrolls */}
+        <div className="sticky top-0 z-10 px-4 pt-4 pb-3 md:px-8 md:pt-6 border-b" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'oklch(0.72 0.14 30 / 0.15)' }}>
@@ -555,7 +555,7 @@ export default function Gym() {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-8 space-y-3">
+        <div className="px-4 py-4 md:px-8 space-y-3">
 
           {/* ── Workouts tab ── */}
           {tab === 'workouts' && (
