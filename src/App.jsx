@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Component } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/useAuthStore'
 import { useAppStore } from './stores/useAppStore'
@@ -80,6 +80,25 @@ function AuthRoute() {
 }
 
 const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI__)
+
+class PageErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+        <p className="text-base font-semibold" style={{ color: 'var(--fg)' }}>Something went wrong</p>
+        <p className="text-sm" style={{ color: 'var(--fg-3)' }}>{this.state.error.message}</p>
+        <button
+          onClick={() => this.setState({ error: null })}
+          className="px-4 py-2 rounded-lg text-sm font-medium"
+          style={{ background: 'var(--bg-3)', color: 'var(--fg)' }}
+        >Try again</button>
+      </div>
+    )
+  }
+}
 
 // Pick the right shell: native mobile gets bottom-tab layout, everything else gets sidebar
 const AppShell = isCapacitor ? MobileLayout : AppLayout
@@ -395,7 +414,7 @@ export default function App() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="sports" element={<Sports />} />
-          <Route path="gym" element={<Gym />} />
+          <Route path="gym" element={<PageErrorBoundary><Gym /></PageErrorBoundary>} />
           <Route path="books" element={<Books />} />
           <Route path="settings" element={<Settings />} />
           <Route path="archive" element={<Archive />} />
