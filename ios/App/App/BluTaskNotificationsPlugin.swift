@@ -53,7 +53,7 @@ public class BluTaskNotificationsPlugin: CAPPlugin, CAPBridgedPlugin {
     // other error conditions are logged.
 
     @objc func schedule(_ call: CAPPluginCall) {
-        call.resolve(["ok": true])
+        call.resolve(["ok": true, "marker": "BUILD-75-STRIPPED"])
         return
     }
 

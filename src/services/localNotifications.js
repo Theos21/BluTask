@@ -213,39 +213,42 @@ export async function requestPermission() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function sendTestNotification() {
+  // BUILD 75 DIAGNOSTIC: bypasses scheduleNotifs and calls LN.schedule directly
+  // so we can read its return value (expecting marker=BUILD-75-STRIPPED).
+  // Always returns ok:false so the diagnostic surfaces in the UI's error path
+  // — the success path hardcodes its own message and would hide the marker.
   if (!IS_NATIVE) return { ok: false, reason: 'Not running as a native app' }
 
-  async function _attempt() {
-    const status = await getPermissionStatus()
-    if (status === 'denied') {
-      return { ok: false, reason: 'Notifications are blocked. Go to iOS Settings → BluTask → Notifications and enable them.' }
-    }
-    if (status === 'error') {
-      return { ok: false, reason: 'Could not check notification permission. Try restarting the app.' }
-    }
-    try {
-      await scheduleNotifs([
-        oneShot(TEST_ID, 'BluTask notifications work! ✓',
-          'Your notification setup is working correctly.', Date.now() + 5_000),
-      ])
-    } catch (err) {
-      console.error(TAG, 'schedule() error:', err)
-      return { ok: false, reason: `Scheduling failed: ${err?.message ?? String(err)}` }
-    }
-    console.log(TAG, 'Test notification scheduled — fires in 5 s')
-    return { ok: true }
-  }
+  const platform   = Capacitor.getPlatform()
+  const pluginKeys = Object.keys(Capacitor.Plugins || {}).join(',') || '(none)'
+  const available  = Capacitor.isPluginAvailable('BluTaskNotifications')
+  const diag       = `pf=${platform} avail=${available} keys=[${pluginKeys}]`
 
   try {
-    return await withTimeout(_attempt(), 20_000, 'sendTestNotification')
+    const LN = await getPlugin()
+    if (!LN) return { ok: false, reason: `DIAG: no plugin. ${diag}` }
+
+    const t0 = Date.now()
+    const result = await withTimeout(
+      LN.schedule({
+        notifications: [
+          oneShot(TEST_ID, 'BluTask notifications work! ✓',
+            'Your notification setup is working correctly.', Date.now() + 5_000),
+        ],
+      }),
+      10_000,
+      'schedule',
+    )
+    const elapsed = Date.now() - t0
+    const marker  = result?.marker ?? `(no marker — raw=${JSON.stringify(result)})`
+    return { ok: false, reason: `DIAG: schedule resolved in ${elapsed}ms marker=${marker} ${diag}` }
   } catch (err) {
-    console.error(TAG, 'sendTestNotification failed:', err.message)
-    const isTimeout = err.message?.includes('Timed out')
+    const isTimeout = err?.message?.includes('Timed out')
     return {
       ok: false,
       reason: isTimeout
-        ? 'Request timed out after 20 s. Make sure notifications are enabled in iOS Settings → BluTask.'
-        : err.message,
+        ? `DIAG: schedule hung >10s. ${diag}`
+        : `DIAG: schedule threw: ${err?.message ?? String(err)} ${diag}`,
     }
   }
 }
